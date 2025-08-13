@@ -27,7 +27,7 @@ npm install reactend react
 ## Example
 
 ```tsx
-import { App, Route, Response, useRoute, serve } from "reactend";
+import { App, Route, Response, useRoute, serve } from "reactendjs";
 
 function Backend() {
   return (
