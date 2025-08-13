@@ -17,7 +17,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "reactend": "^0.1.0",
+    "reactendjs": "^0.1.0",
     "react": "^19.1.1"
   },
   "devDependencies": {
