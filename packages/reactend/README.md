@@ -13,7 +13,7 @@ npx create-reactend my-api
 ## Quick Start
 
 ```tsx
-import { App, Route, Response, useRoute, serve } from "reactend";
+import { App, Route, Response, useRoute, serve } from "reactendjs";
 
 function Backend() {
   return (
