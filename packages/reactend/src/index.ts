@@ -1,4 +1,4 @@
-export { render, useRoute } from "./runtime";
+export { serve, useRoute } from "./runtime";
 import React from "react";
 
 export function App({
