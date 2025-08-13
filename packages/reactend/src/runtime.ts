@@ -29,30 +29,40 @@ function processElement(element: any): void {
     return;
   }
 
-  if (typeof element === "object" && element.type) {
-    if (
-      element.type === "App" ||
-      (element.type && element.type.name === "App")
-    ) {
-      // Extract app configuration
-      const props = element.props || {};
-      appConfig = {
-        port: props.port || 9000,
-      };
+  if (typeof element === "object") {
+    // Handle React elements with function components
+    if (typeof element.type === "function") {
+      // Call the function component to get its JSX result
+      const result = element.type(element.props || {});
+      processElement(result);
+      return;
     }
 
-    if (
-      element.type === "Route" ||
-      (element.type && element.type.name === "Route")
-    ) {
-      // Handle Route component
-      const props = element.props || {};
-      if (props.method && props.path && props.children) {
-        routes.push({
-          method: props.method,
-          path: props.path,
-          handler: props.children,
-        });
+    if (element.type) {
+      if (
+        element.type === "App" ||
+        (element.type && element.type.name === "App")
+      ) {
+        // Extract app configuration
+        const props = element.props || {};
+        appConfig = {
+          port: props.port || 9000,
+        };
+      }
+
+      if (
+        element.type === "Route" ||
+        (element.type && element.type.name === "Route")
+      ) {
+        // Handle Route component
+        const props = element.props || {};
+        if (props.method && props.path && props.children) {
+          routes.push({
+            method: props.method,
+            path: props.path,
+            handler: props.children,
+          });
+        }
       }
     }
 
@@ -67,7 +77,7 @@ function processElement(element: any): void {
   }
 }
 
-export function render(element: ReactNode) {
+export function serve(element: ReactNode) {
   // Clear routes and config before processing
   routes.length = 0;
   appConfig = {};
