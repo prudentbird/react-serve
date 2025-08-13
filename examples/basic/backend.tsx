@@ -1,4 +1,4 @@
-import { App, Route, Response, useRoute, serve } from "reactend";
+import { App, Route, Response, useRoute, serve } from "reactendjs";
 
 // Mock data
 const mockUsers = [
