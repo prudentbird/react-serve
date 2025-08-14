@@ -17,10 +17,25 @@ import {
   App,
   Route,
   RouteGroup,
+  Middleware,
   Response,
   useRoute,
+  useSetContext,
+  useContext,
   serve,
+  type MiddlewareFunction,
 } from "react-serve-js";
+
+// Example auth middleware
+const authMiddleware: MiddlewareFunction = (req, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return <Response status={401} json={{ error: "Unauthorized" }} />;
+  }
+
+  useSetContext("user", { id: 1, name: "User" });
+  return next();
+};
 
 function Backend() {
   return (
@@ -32,10 +47,13 @@ function Backend() {
       </Route>
 
       <RouteGroup prefix="/api">
+        <Middleware use={authMiddleware} />
+
         <Route path="/users/:id" method="GET">
           {async () => {
             const { params } = useRoute();
-            return <Response json={{ userId: params.id }} />;
+            const user = useContext("user");
+            return <Response json={{ userId: params.id, currentUser: user }} />;
           }}
         </Route>
       </RouteGroup>
@@ -65,6 +83,42 @@ Defines an API endpoint.
 - `path: string` - URL path pattern (supports Express.js route parameters)
 - `method: string` - HTTP method (GET, POST, PUT, DELETE, etc.)
 - `children: () => Promise<ReactElement>` - Async function that handles the request
+
+### `<Middleware>`
+
+Executes middleware functions for request processing, authentication, logging, etc.
+
+**Props:**
+
+- `use: MiddlewareFunction` - The middleware function to execute
+
+**Example:**
+
+```tsx
+import { type MiddlewareFunction } from "react-serve-js";
+
+const authMiddleware: MiddlewareFunction = (req, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return <Response status={401} json={{ error: "Unauthorized" }} />;
+  }
+
+  // Attach user data to request context
+  useSetContext("user", { id: 1, name: "John" });
+
+  return next(); // Continue to next middleware or route handler
+};
+
+<RouteGroup prefix="/api">
+  <Middleware use={authMiddleware} />
+  <Route path="/users" method="GET">
+    {() => {
+      const user = useContext("user");
+      return <Response json={user} />;
+    }}
+  </Route>
+</RouteGroup>;
+```
 
 ### `<RouteGroup>`
 
@@ -120,10 +174,36 @@ Returns:
 - `req` - Express request object
 - `res` - Express response object
 
+### `useSetContext(key, value)`
+
+Store data in the request context (available in middleware).
+
+```tsx
+const authMiddleware: MiddlewareFunction = (req, next) => {
+  useSetContext("user", { id: 1, name: "John" });
+  return next();
+};
+```
+
+### `useContext(key)`
+
+Retrieve data from the request context (available in route handlers and middleware).
+
+```tsx
+<Route path="/me" method="GET">
+  {() => {
+    const user = useContext("user");
+    return <Response json={user} />;
+  }}
+</Route>
+```
+
 ## Features
 
 - 🔥 **Hot Reload** - Automatic server restart on file changes (development)
 - 🎯 **Type Safe** - Full TypeScript support
 - ⚡ **Fast** - Built on Express.js
 - 🧩 **Composable** - Use React patterns for API logic
-- 📦 **Zero Config** - Works out of the box
+- �️ **Middleware Support** - Authentication, logging, and custom middleware
+- 🗂️ **Route Grouping** - Organize routes with shared prefixes
+- �📦 **Zero Config** - Works out of the box
