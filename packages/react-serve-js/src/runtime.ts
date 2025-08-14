@@ -21,11 +21,11 @@ const routes: { method: string; path: string; handler: Function }[] = [];
 let appConfig: { port?: number } = {};
 
 // Component processor
-function processElement(element: any): void {
+function processElement(element: any, pathPrefix: string = ""): void {
   if (!element) return;
 
   if (Array.isArray(element)) {
-    element.forEach(processElement);
+    element.forEach((el) => processElement(el, pathPrefix));
     return;
   }
 
@@ -34,7 +34,7 @@ function processElement(element: any): void {
     if (typeof element.type === "function") {
       // Call the function component to get its JSX result
       const result = element.type(element.props || {});
-      processElement(result);
+      processElement(result, pathPrefix);
       return;
     }
 
@@ -51,27 +51,53 @@ function processElement(element: any): void {
       }
 
       if (
+        element.type === "RouteGroup" ||
+        (element.type && element.type.name === "RouteGroup")
+      ) {
+        // Handle RouteGroup component
+        const props = element.props || {};
+        const groupPrefix = props.prefix
+          ? `${pathPrefix}${props.prefix}`
+          : pathPrefix;
+
+        // Process children with the new prefix
+        if (props.children) {
+          if (Array.isArray(props.children)) {
+            props.children.forEach((child: any) =>
+              processElement(child, groupPrefix)
+            );
+          } else {
+            processElement(props.children, groupPrefix);
+          }
+        }
+        return;
+      }
+
+      if (
         element.type === "Route" ||
         (element.type && element.type.name === "Route")
       ) {
-        // Handle Route component
         const props = element.props || {};
         if (props.method && props.path && props.children) {
+          const fullPath = `${pathPrefix}${props.path}`;
           routes.push({
             method: props.method,
-            path: props.path,
+            path: fullPath,
             handler: props.children,
           });
         }
+        return;
       }
     }
 
     // Process children
     if (element.props && element.props.children) {
       if (Array.isArray(element.props.children)) {
-        element.props.children.forEach(processElement);
+        element.props.children.forEach((child: any) =>
+          processElement(child, pathPrefix)
+        );
       } else {
-        processElement(element.props.children);
+        processElement(element.props.children, pathPrefix);
       }
     }
   }
