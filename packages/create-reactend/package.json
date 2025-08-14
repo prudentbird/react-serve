@@ -1,9 +1,9 @@
 {
-  "name": "create-reactend",
-  "version": "0.1.1",
-  "description": "CLI tool for bootstrapping new Reactend applications",
+  "name": "create-react-serve",
+  "version": "0.1.2",
+  "description": "CLI tool for bootstrapping new ReactServe applications",
   "bin": {
-    "create-reactend": "dist/cli.js"
+    "create-react-serve": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -15,7 +15,7 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "reactend",
+    "react-serve",
     "cli",
     "bootstrap",
     "scaffold",
