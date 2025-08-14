@@ -16,7 +16,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "react-serve-js": "file:../../packages/reactend",
+    "react-serve-js": "file:../../packages/react-serve-js",
     "react": "^19.1.1"
   },
   "devDependencies": {
