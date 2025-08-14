@@ -1,7 +1,7 @@
 {
-  "name": "my-reactend-app",
+  "name": "my-react-serve-app",
   "version": "1.0.0",
-  "description": "A Reactend application",
+  "description": "A ReactServe application",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -10,14 +10,14 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
-    "reactend",
+    "react-serve",
     "api",
     "backend"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "reactendjs": "^0.1.0",
+    "react-serve-js": "^0.1.0",
     "react": "^19.1.1"
   },
   "devDependencies": {
