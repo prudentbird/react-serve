@@ -1,6 +1,6 @@
-# My Reactend App
+# My ReactServe App
 
-A backend API built with [Reactend](https://github.com/your-username/reactend) - a React-style framework for building APIs with JSX.
+A backend API built with [ReactServe](https://github.com/your-username/react-serve-js) - a React-style framework for building APIs with JSX.
 
 ## Getting Started
 
@@ -16,7 +16,7 @@ Start the development server:
 npm run dev
 ```
 
-Your API will be running at http://localhost:3000
+Your API will be running at http://localhost:6969
 
 ## Available Endpoints
 
@@ -41,6 +41,6 @@ src/
 
 ## Learn More
 
-- [Reactend Documentation](https://github.com/your-username/reactend)
+- [ReactServe Documentation](https://github.com/your-username/react-serve-js)
 - [React Documentation](https://react.dev/)
 - [Express Documentation](https://expressjs.com/)
