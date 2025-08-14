@@ -7,13 +7,13 @@ Reactend lets you build backend APIs using React-style JSX syntax. Define routes
 ## Installation
 
 ```bash
-npx create-reactend my-api
+npx create-react-serve my-api
 ```
 
 ## Quick Start
 
 ```tsx
-import { App, Route, Response, useRoute, serve } from "reactendjs";
+import { App, Route, Response, useRoute, serve } from "react-serve-js";
 
 function Backend() {
   return (
