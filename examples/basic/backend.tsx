@@ -1,9 +1,11 @@
 import {
   App,
   Route,
+  RouteGroup,
   Response,
   useRoute,
   serve,
+  //@ts-ignore
 } from "../../packages/react-serve-js/src";
 
 const mockUsers = [
@@ -21,33 +23,45 @@ export default function Backend() {
         }}
       </Route>
 
-      <Route path="/users" method="GET">
-        {async () => {
-          return <Response json={mockUsers} />;
-        }}
-      </Route>
+      <RouteGroup prefix="/api">
+        <Route path="/users" method="GET">
+          {async () => {
+            return <Response json={mockUsers} />;
+          }}
+        </Route>
 
-      <Route path="/users/:id" method="GET">
-        {async () => {
-          const { params } = useRoute();
-          const user = mockUsers.find((u) => u.id === Number(params.id));
-          return user ? (
-            <Response json={user} />
-          ) : (
-            <Response status={404} json={{ error: "User not found" }} />
-          );
-        }}
-      </Route>
+        <Route path="/users/:id" method="GET">
+          {async () => {
+            const { params } = useRoute();
+            const user = mockUsers.find((u) => u.id === Number(params.id));
+            return user ? (
+              <Response json={user} />
+            ) : (
+              <Response status={404} json={{ error: "User not found" }} />
+            );
+          }}
+        </Route>
 
-      <Route path="/health" method="GET">
-        {async () => {
-          return (
-            <Response
-              json={{ status: "OK", timestamp: new Date().toISOString() }}
-            />
-          );
-        }}
-      </Route>
+        <Route path="/health" method="GET">
+          {async () => {
+            return (
+              <Response
+                json={{ status: "OK", timestamp: new Date().toISOString() }}
+              />
+            );
+          }}
+        </Route>
+      </RouteGroup>
+
+      <RouteGroup prefix="/v1">
+        <RouteGroup prefix="/admin">
+          <Route path="/stats" method="GET">
+            {async () => {
+              return <Response json={{ totalUsers: mockUsers.length }} />;
+            }}
+          </Route>
+        </RouteGroup>
+      </RouteGroup>
     </App>
   );
 }
