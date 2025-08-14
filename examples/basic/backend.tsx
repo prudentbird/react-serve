@@ -45,10 +45,29 @@ const authMiddleware: MiddlewareFunction = (req, next) => {
 // Logging middleware example
 const loggingMiddleware: MiddlewareFunction = (req, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-
+  
   // Add request timestamp to context
   useSetContext("requestTimestamp", Date.now());
+  
+  return next();
+};
 
+// Route-specific middleware example
+const slowRouteMiddleware: MiddlewareFunction = (req, next) => {
+  console.log(`⏱️ Slow route accessed: ${req.path}`);
+  
+  // Simulate some processing time
+  useSetContext("processStartTime", Date.now());
+  
+  return next();
+};
+
+// Another route-specific middleware
+const adminLogMiddleware: MiddlewareFunction = (req, next) => {
+  console.log(`🔐 Admin route accessed: ${req.path} at ${new Date().toISOString()}`);
+  
+  useSetContext("adminAccess", true);
+  
   return next();
 };
 
@@ -58,6 +77,42 @@ export default function Backend() {
       <Route path="/" method="GET">
         {async () => {
           return <Response json={{ message: "Welcome to ReactServe!" }} />;
+        }}
+      </Route>
+
+      {/* Route with individual middleware */}
+      <Route 
+        path="/slow" 
+        method="GET"
+        middleware={slowRouteMiddleware}
+      >
+        {async () => {
+          const processStart = useContext("processStartTime");
+          const processingTime = Date.now() - processStart;
+          
+          return <Response json={{ 
+            message: "This route has its own middleware",
+            processStartTime: processStart,
+            processingTime: processingTime + "ms"
+          }} />;
+        }}
+      </Route>
+
+      {/* Route with multiple individual middlewares */}
+      <Route 
+        path="/admin-only" 
+        method="GET"
+        middleware={[loggingMiddleware, adminLogMiddleware]}
+      >
+        {async () => {
+          const timestamp = useContext("requestTimestamp");
+          const adminAccess = useContext("adminAccess");
+          
+          return <Response json={{ 
+            message: "Admin route with multiple middlewares",
+            requestedAt: timestamp,
+            adminAccess: adminAccess
+          }} />;
         }}
       </Route>
 
@@ -76,6 +131,25 @@ export default function Backend() {
                 }}
               />
             );
+          }}
+        </Route>
+
+        {/* Route with both RouteGroup middleware AND individual middleware */}
+        <Route 
+          path="/special-users" 
+          method="GET"
+          middleware={slowRouteMiddleware}
+        >
+          {async () => {
+            const timestamp = useContext("requestTimestamp");
+            const processStart = useContext("processStartTime");
+            
+            return <Response json={{ 
+              users: mockUsers.slice(0, 1), // Only first user for "special"
+              requestedAt: timestamp,
+              processStartTime: processStart,
+              note: "This route has RouteGroup middleware + individual middleware"
+            }} />;
           }}
         </Route>
 
