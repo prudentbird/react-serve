@@ -1,4 +1,4 @@
-{
+{../create-react-serve/dist../create-react-serve/src../create-react-serve/src/**/*../create-react-serve/node_modules../create-react-serve/dist../create-react-serve/templates
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",

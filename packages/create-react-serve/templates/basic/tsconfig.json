@@ -1,4 +1,4 @@
-{../../../create-react-serve/templates/basic/dist../../../create-react-serve/templates/basic/src../../../create-react-serve/templates/basic/src/**/*../../../create-react-serve/templates/basic/node_modules../../../create-react-serve/templates/basic/dist
+{
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",

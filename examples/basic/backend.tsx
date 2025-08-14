@@ -1,4 +1,10 @@
-import { App, Route, Response, useRoute, serve } from "react-serve-js";
+import {
+  App,
+  Route,
+  Response,
+  useRoute,
+  serve,
+} from "../../packages/react-serve-js/src";
 
 const mockUsers = [
   { id: 1, name: "John Doe", email: "john@example.com" },

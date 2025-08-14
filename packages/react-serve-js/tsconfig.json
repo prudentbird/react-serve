@@ -1,4 +1,4 @@
-{../react-serve-js/dist../react-serve-js/src../react-serve-js/src/**/*../react-serve-js/node_modules../react-serve-js/dist
+{
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
