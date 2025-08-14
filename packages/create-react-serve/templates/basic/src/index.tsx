@@ -2,9 +2,13 @@ import {
   App,
   Route,
   RouteGroup,
+  Middleware,
   Response,
   useRoute,
+  useSetContext,
+  useContext,
   serve,
+  type MiddlewareFunction,
 } from "react-serve-js";
 
 const mockUsers = [
@@ -12,6 +16,13 @@ const mockUsers = [
   { id: 2, name: "Jane Smith", email: "jane@example.com" },
   { id: 3, name: "Bob Johnson", email: "bob@example.com" },
 ];
+
+// Example logging middleware
+const loggingMiddleware: MiddlewareFunction = (req, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  useSetContext("timestamp", Date.now());
+  return next();
+};
 
 function Backend() {
   return (
@@ -23,18 +34,29 @@ function Backend() {
       </Route>
 
       <RouteGroup prefix="/api">
+        <Middleware use={loggingMiddleware} />
+
         <Route path="/users" method="GET">
           {async () => {
-            return <Response json={mockUsers} />;
+            const timestamp = useContext("timestamp");
+            return (
+              <Response
+                json={{
+                  users: mockUsers,
+                  requestedAt: timestamp,
+                }}
+              />
+            );
           }}
         </Route>
 
         <Route path="/users/:id" method="GET">
           {async () => {
             const { params } = useRoute();
+            const timestamp = useContext("timestamp");
             const user = mockUsers.find((u) => u.id === Number(params.id));
             return user ? (
-              <Response json={user} />
+              <Response json={{ ...user, requestedAt: timestamp }} />
             ) : (
               <Response status={404} json={{ error: "User not found" }} />
             );
@@ -43,9 +65,14 @@ function Backend() {
 
         <Route path="/health" method="GET">
           {async () => {
+            const timestamp = useContext("timestamp");
             return (
               <Response
-                json={{ status: "OK", timestamp: new Date().toISOString() }}
+                json={{
+                  status: "OK",
+                  timestamp: new Date().toISOString(),
+                  requestedAt: timestamp,
+                }}
               />
             );
           }}
