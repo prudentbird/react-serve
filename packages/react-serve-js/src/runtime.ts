@@ -135,10 +135,10 @@ function processElement(
         const props = element.props || {};
         if (props.method && props.path && props.children) {
           const fullPath = `${pathPrefix}${props.path}`;
-          
+
           // Combine RouteGroup middlewares with Route-level middlewares
           let routeMiddlewares = [...middlewares];
-          
+
           if (props.middleware) {
             if (Array.isArray(props.middleware)) {
               routeMiddlewares.push(...props.middleware);
@@ -146,7 +146,7 @@ function processElement(
               routeMiddlewares.push(props.middleware);
             }
           }
-          
+
           routes.push({
             method: props.method,
             path: fullPath,

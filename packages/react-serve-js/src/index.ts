@@ -26,9 +26,14 @@ export function Route({
   children: any;
   path: string;
   method: string;
-  middleware?: import("./runtime").Middleware | import("./runtime").Middleware[];
+  middleware?:
+    | import("./runtime").Middleware
+    | import("./runtime").Middleware[];
 }): React.ReactElement {
-  return { type: "Route", props: { children, path, method, middleware } } as any;
+  return {
+    type: "Route",
+    props: { children, path, method, middleware },
+  } as any;
 }
 
 export function Response({
