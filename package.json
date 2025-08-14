@@ -8,9 +8,9 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=packages/react-serve-js --workspace=packages/create-react-serve",
     "dev": "npm run dev --workspace=examples/basic",
-    "publish": "npm run build && npm publish --workspaces",
+    "publish": "npm run build && npm publish --workspaces --exclude=react-serve-basic-example",
     "test": "npm run test --workspaces"
   },
   "keywords": [
