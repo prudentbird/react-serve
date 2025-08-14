@@ -21,12 +21,14 @@ export function Route({
   children,
   path,
   method,
+  middleware,
 }: {
   children: any;
   path: string;
   method: string;
+  middleware?: import("./runtime").Middleware | import("./runtime").Middleware[];
 }): React.ReactElement {
-  return { type: "Route", props: { children, path, method } } as any;
+  return { type: "Route", props: { children, path, method, middleware } } as any;
 }
 
 export function Response({
