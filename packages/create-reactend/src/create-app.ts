@@ -45,7 +45,7 @@ export async function createReactendApp(
       }
     }
 
-    console.log(`\n🚀 Creating Reactend app in ${projectPath}...\n`);
+    console.log(`\n🚀 Creating ReactServe app in ${projectPath}...\n`);
 
     // Create project directory
     await mkdir(projectPath, { recursive: true });
@@ -61,7 +61,7 @@ export async function createReactendApp(
     console.log(`  cd ${projectName}`);
     console.log("  npm install");
     console.log("  npm run dev");
-    console.log(`\n🌐 Your app will be running at http://localhost:3000\n`);
+    console.log(`\n🌐 Your app will be running at http://localhost:6969\n`);
   } finally {
     rl.close();
   }
