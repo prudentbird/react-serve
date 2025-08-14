@@ -1,5 +1,5 @@
 import express, { Request, Response as ExpressResponse } from "express";
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import { watch } from "fs";
 
 // Context to hold req/res for useRoute()
@@ -20,7 +20,7 @@ export function useRoute() {
 const routes: { method: string; path: string; handler: Function }[] = [];
 let appConfig: { port?: number } = {};
 
-// Simple component processor - no reconciler needed
+// Component processor
 function processElement(element: any): void {
   if (!element) return;
 
@@ -85,9 +85,9 @@ export function serve(element: ReactNode) {
   // Process the React element tree to extract routes and config
   processElement(element);
 
-  const port = appConfig.port || 9000;
+  const port = appConfig.port || 6969;
 
-  // Create express app
+  // Express
   const app = express();
   app.use(express.json());
 
@@ -156,7 +156,7 @@ export function serve(element: ReactNode) {
   }
 
   const server = app.listen(port, () => {
-    console.log(`🚀 Reactend running at http://localhost:${port}`);
+    console.log(`🚀 ReactServe running at http://localhost:${port}`);
     if (process.env.NODE_ENV !== "production") {
       console.log("🔥 Hot reload enabled - watching for file changes...");
     }
@@ -166,7 +166,7 @@ export function serve(element: ReactNode) {
     console.error("Server error:", err);
   });
 
-  // Hot reload functionality
+  // Hot reload
   if (process.env.NODE_ENV !== "production") {
     const watchPaths = ["."];
     watchPaths.forEach((watchPath) => {
