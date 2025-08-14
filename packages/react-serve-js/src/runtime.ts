@@ -2,13 +2,14 @@ import express, { Request, Response as ExpressResponse } from "express";
 import { ReactNode } from "react";
 import { watch } from "fs";
 
-// Context to hold req/res for useRoute()
+// Context to hold req/res for useRoute() and middleware context
 let routeContext: {
   req: Request;
   res: ExpressResponse;
   params: any;
   query: any;
   body: any;
+  middlewareContext: Map<string, any>;
 } | null = null;
 
 export function useRoute() {
@@ -16,16 +17,40 @@ export function useRoute() {
   return routeContext;
 }
 
-// Internal store for routes and config
-const routes: { method: string; path: string; handler: Function }[] = [];
+export function useSetContext(key: string, value: any) {
+  if (!routeContext)
+    throw new Error("useSetContext must be used inside a Route or Middleware");
+  routeContext.middlewareContext.set(key, value);
+}
+
+export function useContext(key: string) {
+  if (!routeContext)
+    throw new Error("useContext must be used inside a Route or Middleware");
+  return routeContext.middlewareContext.get(key);
+}
+
+// Middleware type
+export type Middleware = (req: Request, next: () => any) => any;
+
+// Internal store for routes, middlewares and config
+const routes: {
+  method: string;
+  path: string;
+  handler: Function;
+  middlewares: Middleware[];
+}[] = [];
 let appConfig: { port?: number } = {};
 
 // Component processor
-function processElement(element: any, pathPrefix: string = ""): void {
+function processElement(
+  element: any,
+  pathPrefix: string = "",
+  middlewares: Middleware[] = []
+): void {
   if (!element) return;
 
   if (Array.isArray(element)) {
-    element.forEach((el) => processElement(el, pathPrefix));
+    element.forEach((el) => processElement(el, pathPrefix, middlewares));
     return;
   }
 
@@ -34,7 +59,7 @@ function processElement(element: any, pathPrefix: string = ""): void {
     if (typeof element.type === "function") {
       // Call the function component to get its JSX result
       const result = element.type(element.props || {});
-      processElement(result, pathPrefix);
+      processElement(result, pathPrefix, middlewares);
       return;
     }
 
@@ -60,15 +85,45 @@ function processElement(element: any, pathPrefix: string = ""): void {
           ? `${pathPrefix}${props.prefix}`
           : pathPrefix;
 
-        // Process children with the new prefix
+        // Process children to collect middlewares and routes
         if (props.children) {
-          if (Array.isArray(props.children)) {
-            props.children.forEach((child: any) =>
-              processElement(child, groupPrefix)
-            );
-          } else {
-            processElement(props.children, groupPrefix);
-          }
+          const children = Array.isArray(props.children)
+            ? props.children
+            : [props.children];
+
+          // First pass: collect all middleware components in this group
+          const groupMiddlewares = [...middlewares];
+          children.forEach((child: any) => {
+            if (
+              child &&
+              typeof child === "object" &&
+              (child.type === "Middleware" ||
+                (child.type && child.type.name === "Middleware"))
+            ) {
+              const middlewareProps = child.props || {};
+              if (
+                middlewareProps.use &&
+                typeof middlewareProps.use === "function"
+              ) {
+                groupMiddlewares.push(middlewareProps.use);
+              }
+            }
+          });
+
+          // Second pass: process all children with the accumulated middlewares
+          children.forEach((child: any) => {
+            // Skip middleware components in second pass since we already processed them
+            if (
+              !(
+                child &&
+                typeof child === "object" &&
+                (child.type === "Middleware" ||
+                  (child.type && child.type.name === "Middleware"))
+              )
+            ) {
+              processElement(child, groupPrefix, groupMiddlewares);
+            }
+          });
         }
         return;
       }
@@ -84,20 +139,21 @@ function processElement(element: any, pathPrefix: string = ""): void {
             method: props.method,
             path: fullPath,
             handler: props.children,
+            middlewares: [...middlewares],
           });
         }
         return;
       }
     }
 
-    // Process children
+    // Process children for non-RouteGroup elements
     if (element.props && element.props.children) {
       if (Array.isArray(element.props.children)) {
         element.props.children.forEach((child: any) =>
-          processElement(child, pathPrefix)
+          processElement(child, pathPrefix, middlewares)
         );
       } else {
-        processElement(element.props.children, pathPrefix);
+        processElement(element.props.children, pathPrefix, middlewares);
       }
     }
   }
@@ -121,15 +177,48 @@ export function serve(element: ReactNode) {
     const method = route.method.toLowerCase();
     if (method === "get") {
       app.get(route.path, async (req: Request, res: ExpressResponse) => {
+        // Initialize route context with middleware context map
         routeContext = {
           req,
           res,
           params: req.params,
           query: req.query,
           body: req.body,
+          middlewareContext: new Map(),
         };
+
         try {
-          const output = await route.handler();
+          // Execute middlewares in order
+          let middlewareResult: any = null;
+          let shouldContinue = true;
+
+          for (let i = 0; i < route.middlewares.length && shouldContinue; i++) {
+            const middleware = route.middlewares[i];
+
+            // Create next function for this middleware
+            const next = () => {
+              return { __isNext: true };
+            };
+
+            middlewareResult = await middleware(req, next);
+
+            // If middleware returns next(), continue to next middleware
+            // If middleware returns a Response, stop execution
+            if (middlewareResult && middlewareResult.__isNext) {
+              middlewareResult = null; // Clear the next result
+            } else if (middlewareResult) {
+              shouldContinue = false; // Stop processing middlewares
+            }
+          }
+
+          let output: any;
+
+          // If middleware returned a response, use that; otherwise run the route handler
+          if (middlewareResult) {
+            output = middlewareResult;
+          } else {
+            output = await route.handler();
+          }
 
           // Handle Response component
           if (output && typeof output === "object") {
