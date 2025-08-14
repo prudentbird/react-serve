@@ -1,6 +1,6 @@
 {
   "name": "create-react-serve",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "CLI tool for bootstrapping new ReactServe applications",
   "bin": {
     "create-react-serve": "dist/cli.js"
