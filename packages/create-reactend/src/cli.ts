@@ -12,8 +12,8 @@ const packageJson = JSON.parse(
 const program = new Command();
 
 program
-  .name("create-reactend")
-  .description("Create a new Reactend application")
+  .name("create-react-serve")
+  .description("Create a new ReactServe application")
   .version(packageJson.version);
 
 program
@@ -23,7 +23,7 @@ program
     try {
       await createReactendApp(projectName, options?.template || "basic");
     } catch (error) {
-      console.error("Error creating Reactend app:", error);
+      console.error("Error creating ReactServe app:", error);
       process.exit(1);
     }
   });
