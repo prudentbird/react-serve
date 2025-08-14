@@ -1,4 +1,4 @@
-import { App, Route, Response, useRoute, serve } from "reactendjs";
+import { App, Route, Response, useRoute, serve } from "react-serve-js";
 
 // Mock data
 const mockUsers = [
