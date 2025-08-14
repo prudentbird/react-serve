@@ -1,6 +1,5 @@
 import { App, Route, Response, useRoute, serve } from "./";
 
-// Mock data
 const mockUsers = [
   { id: 1, name: "John Doe", email: "john@example.com" },
   { id: 2, name: "Jane Smith", email: "jane@example.com" },
@@ -32,5 +31,4 @@ export default function Backend() {
   );
 }
 
-// Start the server
 serve(Backend());
