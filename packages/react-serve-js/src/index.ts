@@ -32,3 +32,13 @@ export function Response({
 }): React.ReactElement {
   return { type: "Response", props: { json, status } } as any;
 }
+
+export function RouteGroup({
+  children,
+  prefix,
+}: {
+  children: any;
+  prefix?: string;
+}): React.ReactElement {
+  return { type: "RouteGroup", props: { children, prefix } } as any;
+}
