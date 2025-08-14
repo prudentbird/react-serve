@@ -1,4 +1,10 @@
-export { serve, useRoute } from "./runtime";
+export {
+  serve,
+  useRoute,
+  useSetContext,
+  useContext,
+  type Middleware as MiddlewareFunction,
+} from "./runtime";
 import React from "react";
 
 export function App({
@@ -31,6 +37,14 @@ export function Response({
   status?: number;
 }): React.ReactElement {
   return { type: "Response", props: { json, status } } as any;
+}
+
+export function Middleware({
+  use,
+}: {
+  use: import("./runtime").Middleware;
+}): React.ReactElement {
+  return { type: "Middleware", props: { use } } as any;
 }
 
 export function RouteGroup({
