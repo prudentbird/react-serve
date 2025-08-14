@@ -1,7 +1,7 @@
 {
-  "name": "reactend-basic-example",
+  "name": "react-serve-basic-example",
   "version": "1.0.0",
-  "description": "Basic Reactend example",
+  "description": "Basic ReactServe example",
   "main": "dist/backend.js",
   "scripts": {
     "build": "tsc",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
-    "reactend",
+    "react-serve",
     "example"
   ],
   "author": "",

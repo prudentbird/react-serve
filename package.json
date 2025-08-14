@@ -1,5 +1,5 @@
 {
-  "name": "reactend-monorepo",
+  "name": "react-serve-monorepo",
   "version": "1.0.0",
   "description": "React-style backend framework for building APIs with JSX",
   "private": true,

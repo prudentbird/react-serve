@@ -1,8 +1,8 @@
-# Reactend
+# ReactServe
 
 > React-style backend framework for building APIs with JSX
 
-Reactend lets you build backend APIs using React-style JSX syntax. Define routes, handle requests, and send responses all within familiar JSX components.
+ReactServe lets you build backend APIs using React-style JSX syntax. Define routes, handle requests, and send responses all within familiar JSX components.
 
 ## Installation
 

@@ -14,7 +14,7 @@ function ask(question: string): Promise<string> {
   });
 }
 
-export async function createReactendApp(
+export async function createReactServeApp(
   projectName?: string,
   template = "basic"
 ) {

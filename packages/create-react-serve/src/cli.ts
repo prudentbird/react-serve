@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { createReactendApp } from "./create-app";
+import { createReactServeApp } from "./create-app";
 import { readFileSync } from "fs";
 import { join } from "path";
 
@@ -21,7 +21,7 @@ program
   .option("-t, --template <template>", "Template to use", "basic")
   .action(async (projectName?: string, options?: { template: string }) => {
     try {
-      await createReactendApp(projectName, options?.template || "basic");
+      await createReactServeApp(projectName, options?.template || "basic");
     } catch (error) {
       console.error("Error creating ReactServe app:", error);
       process.exit(1);

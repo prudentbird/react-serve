@@ -17,7 +17,7 @@ export default function Backend() {
     <App port={3000}>
       <Route path="/" method="GET">
         {async () => {
-          return <Response json={{ message: "Welcome to Reactend!" }} />;
+          return <Response json={{ message: "Welcome to ReactServe!" }} />;
         }}
       </Route>
 
