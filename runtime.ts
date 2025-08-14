@@ -147,7 +147,7 @@ export function serve(element: ReactNode) {
   }
 
   const server = app.listen(port, () => {
-    console.log(`🚀 Reactend running at http://localhost:${port}`);
+    console.log(`🚀 ReactServe running at http://localhost:${port}`);
     console.log("🔥 Hot reload enabled - watching for file changes...");
   });
 
