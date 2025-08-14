@@ -1,15 +1,19 @@
-# Reactend
+# ReactServe
 
 > React-style backend framework for building APIs with JSX
 
-[![npm version](https://badge.fury.io/js/reactend.svg)](https://badge.fury.io/js/reactend)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-Reactend lets you build backend APIs using React-style JSX syntax. Define routes, handle requests, and send responses all within familiar JSX components.
+ReactServe lets you build backend APIs using React-style JSX syntax. Define routes, handle requests, and send responses all within familiar JSX components.
 
 ## Quick Start
 
-Create a new Reactend app:
+Create a new ReactServe app:
+
+```bash
+npx create-react-serve my-api
+cd my-api
+npm install
+npm run dev
+```
 
 ```bash
 npx create-react-serve my-api
@@ -65,8 +69,8 @@ This repository is a monorepo containing:
 
 ### Core Packages
 
-- [`reactend`](./packages/reactend) - The core framework
-- [`create-reactend`](./packages/create-reactend) - CLI tool for bootstrapping apps
+- [`react-serve-js`](./packages/react-serve-js) - The core framework
+- [`create-react-serve`](./packages/create-react-serve) - CLI tool for bootstrapping apps
 
 ### Examples
 
