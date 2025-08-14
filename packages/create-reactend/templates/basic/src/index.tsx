@@ -1,6 +1,5 @@
-import { App, Route, Response, useRoute, serve } from "reactendjs";
+import { App, Route, Response, useRoute, serve } from "react-serve-js";
 
-// Mock data
 const mockUsers = [
   { id: 1, name: "John Doe", email: "john@example.com" },
   { id: 2, name: "Jane Smith", email: "jane@example.com" },
@@ -9,10 +8,10 @@ const mockUsers = [
 
 function Backend() {
   return (
-    <App port={3000}>
+    <App port={6969}>
       <Route path="/" method="GET">
         {async () => {
-          return <Response json={{ message: "Welcome to Reactend!" }} />;
+          return <Response json={{ message: "Welcome to ReactServe!" }} />;
         }}
       </Route>
 
@@ -47,5 +46,4 @@ function Backend() {
   );
 }
 
-// Start the server
 serve(Backend());
