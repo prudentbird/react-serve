@@ -13,7 +13,14 @@ npx create-react-serve my-api
 ## Quick Start
 
 ```tsx
-import { App, Route, Response, useRoute, serve } from "react-serve-js";
+import {
+  App,
+  Route,
+  RouteGroup,
+  Response,
+  useRoute,
+  serve,
+} from "react-serve-js";
 
 function Backend() {
   return (
@@ -24,12 +31,14 @@ function Backend() {
         }}
       </Route>
 
-      <Route path="/users/:id" method="GET">
-        {async () => {
-          const { params } = useRoute();
-          return <Response json={{ userId: params.id }} />;
-        }}
-      </Route>
+      <RouteGroup prefix="/api">
+        <Route path="/users/:id" method="GET">
+          {async () => {
+            const { params } = useRoute();
+            return <Response json={{ userId: params.id }} />;
+          }}
+        </Route>
+      </RouteGroup>
     </App>
   );
 }
@@ -56,6 +65,33 @@ Defines an API endpoint.
 - `path: string` - URL path pattern (supports Express.js route parameters)
 - `method: string` - HTTP method (GET, POST, PUT, DELETE, etc.)
 - `children: () => Promise<ReactElement>` - Async function that handles the request
+
+### `<RouteGroup>`
+
+Groups routes together with a shared path prefix.
+
+**Props:**
+
+- `prefix?: string` - Path prefix to apply to all child routes
+- `children: ReactNode` - Child routes and route groups
+
+**Example:**
+
+```tsx
+<RouteGroup prefix="/api">
+  <Route path="/users" method="GET">
+    {async () => <Response json={users} />}
+  </Route>
+  {/* This becomes /api/users */}
+
+  <RouteGroup prefix="/v1">
+    <Route path="/posts" method="GET">
+      {async () => <Response json={posts} />}
+    </Route>
+    {/* This becomes /api/v1/posts */}
+  </RouteGroup>
+</RouteGroup>
+```
 
 ### `<Response>`
 
