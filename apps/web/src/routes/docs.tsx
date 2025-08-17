@@ -1,4 +1,11 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import React, { useState, useEffect } from 'react'
+import { 
+  createFileRoute, 
+  Outlet, 
+  Link, 
+  useRouter,
+  useMatches
+} from '@tanstack/react-router'
 
 export const Route = createFileRoute('/docs')({
   component: RouteComponent,
@@ -7,66 +14,100 @@ export const Route = createFileRoute('/docs')({
 
 
 
+const ALL_DOC_ROUTES = [
+  { label: "At a Glance", path: "/docs/at-a-glance" },
+  { label: "Quick Start", path: "/docs/quick-start" },
+  { label: "Key Concepts", path: "/docs/key-concepts" },
+  { label: "App", path: "/docs/app" },
+  { label: "Route", path: "/docs/route" },
+  { label: "RouteGroup", path: "/docs/routegroup" },
+  { label: "Middleware", path: "/docs/middleware" },
+  { label: "Response", path: "/docs/response" },
+  { label: "useRoute", path: "/docs/useroute" },
+  { label: "useSetContext", path: "/docs/usesetcontext" },
+  { label: "useContext", path: "/docs/usecontext" },
+];
+
 const sidebarGroups = [
   {
     group: "Getting Started",
     links: [
-      { label: "At a Glance" },
-      { label: "Quick Start" },
-      { label: "Key Concepts" },
+      { label: "At a Glance", path: "/docs/at-a-glance" },
+      { label: "Quick Start", path: "/docs/quick-start" },
+      { label: "Key Concepts", path: "/docs/key-concepts" },
     ],
   },
   {
     group: "Components",
     links: [
-      { label: "App" },
-      { label: "Route" },
-      { label: "RouteGroup" },
-      { label: "Middleware" },
-      { label: "Response" },
+      { label: "App", path: "/docs/app" },
+      { label: "Route", path: "/docs/route" },
+      { label: "RouteGroup", path: "/docs/routegroup" },
+      { label: "Middleware", path: "/docs/middleware" },
+      { label: "Response", path: "/docs/response" },
     ],
   },
   {
     group: "Hooks",
     links: [
-      { label: "useRoute" },
-      { label: "useSetContext" },
-      { label: "useContext" },
+      { label: "useRoute", path: "/docs/useroute" },
+      { label: "useSetContext", path: "/docs/usesetcontext" },
+      { label: "useContext", path: "/docs/usecontext" },
     ],
   },
   {
     group: "Tutorial",
     links: [
-      { label: "Full Walkthrough" },
+      { label: "Full Walkthrough", path: "/docs/full-walkthrough" },
     ],
   },
 ];
 
-import { Link, useRouter } from '@tanstack/react-router';
 
-function getFlatLinks() {
-  return sidebarGroups.flatMap(group => group.links.map(link => link.label));
+function useDocNavigation() {
+  const router = useRouter();
+  const matches = useMatches();
+  const [state, setState] = useState({
+    currentPath: router.state.location.pathname,
+    currentIndex: -1,
+    prev: null as { label: string, path: string } | null,
+    next: null as { label: string, path: string } | null
+  });
+  
+  useEffect(() => {
+    const currentPath = router.state.location.pathname;
+    
+    const normalizePath = (path: string) => path.replace(/\/$/, '');
+    const normalizedCurrentPath = normalizePath(currentPath);
+    
+    const allRoutes = ALL_DOC_ROUTES;
+    
+    const currentIndex = allRoutes.findIndex(
+      route => normalizePath(route.path) === normalizedCurrentPath
+    );
+    
+    const prev = currentIndex > 0 ? allRoutes[currentIndex - 1] : null;
+    const next = currentIndex < allRoutes.length - 1 ? allRoutes[currentIndex + 1] : null;
+    
+    setState({
+      currentPath,
+      currentIndex,
+      prev,
+      next
+    });
+    
+    console.log('Route changed to:', currentPath, { prev, next, currentIndex });
+  }, [router.state.location.pathname, matches]);
+  
+  return state;
 }
 
-function getCurrentIndex(router) {
-  const flatLinks = getFlatLinks();
-  const current = router.state.location.pathname.split('/').pop();
-  const idx = flatLinks.findIndex(
-    l => l.toLowerCase().replace(/\s+/g, '-') === (current || '').toLowerCase().replace(/\s+/g, '-')
-  );
-  return idx;
+function normalizePath(path: string): string {
+  return path.replace(/\/$/, '');
 }
-
 function RouteComponent() {
   const router = useRouter();
-  const flatLinks = getFlatLinks();
-  const idx = getCurrentIndex(router);
-  const prev = idx > 0 ? flatLinks[idx - 1] : null;
-  const next = idx < flatLinks.length - 1 ? flatLinks[idx + 1] : null;
-
-  function toPath(label) {
-    return '/docs/' + label.toLowerCase().replace(/\s+/g, '-');
-  }
+  const { currentPath, prev, next } = useDocNavigation();
 
   return (
     <div className="flex min-h-screen max-w-7xl mx-auto">
@@ -77,14 +118,29 @@ function RouteComponent() {
             <div key={group.group}>
               <div className="uppercase text-xs text-zinc-500 font-semibold mb-2 tracking-widest">{group.group}</div>
               <div className="space-y-1 ml-2">
-                {group.links.map((link) => (
-                  <div
-                    key={link.label}
-                    className="block text-zinc-300 hover:text-white py-1 px-2 rounded transition-colors cursor-pointer text-sm"
-                  >
-                    {link.label}
-                  </div>
-                ))}
+                {group.links.map((link) => {
+                  const isActive = normalizePath(currentPath) === normalizePath(link.path);
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.path}
+                      className={`block py-1 px-2 rounded transition-colors cursor-pointer text-sm ${
+                        isActive ? 'text-white bg-white/10' : 'text-zinc-300 hover:text-white'
+                      }`}
+                      onClick={() => {
+                     
+                        router.navigate({ 
+                          to: link.path, 
+                          replace: false,
+                    
+                          search: { _t: Date.now().toString() }
+                        });
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -96,10 +152,43 @@ function RouteComponent() {
         </div>
         <div className="flex justify-between mt-12 pt-8 border-t border-white/10">
           {prev ? (
-            <Link to={toPath(prev)} className="text-sm text-zinc-400 hover:text-white transition-colors">← {prev}</Link>
+            <Link 
+              key={`prev-${currentPath}`}
+              to={prev.path}
+              preload="intent"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+              onClick={(e: React.MouseEvent) => {
+                console.log('Navigating to prev:', prev.path);
+                
+                router.navigate({ 
+                  to: prev.path, 
+                  replace: false,
+                  search: { _t: Date.now().toString() }
+                });
+                e.preventDefault();
+              }}
+            >
+              ← {prev.label}
+            </Link>
           ) : <span />}
           {next ? (
-            <Link to={toPath(next)} className="text-sm text-zinc-400 hover:text-white transition-colors">{next} →</Link>
+            <Link 
+              key={`next-${currentPath}`}
+              to={next.path}
+              preload="intent"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+              onClick={(e: React.MouseEvent) => {
+                console.log('Navigating to next:', next.path);
+                router.navigate({ 
+                  to: next.path, 
+                  replace: false,
+                  search: { _t: Date.now().toString() }
+                });
+                e.preventDefault();
+              }}
+            >
+              {next.label} →
+            </Link>
           ) : <span />}
         </div>
       </div>
