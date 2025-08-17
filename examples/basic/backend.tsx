@@ -75,7 +75,16 @@ const adminLogMiddleware: MiddlewareFunction = (req, next) => {
 
 export default function Backend() {
   return (
-    <App port={3000}>
+    <App 
+      port={6969}
+      cors={true} // Enable CORS for all routes
+      // Alternatively, you can use custom CORS options:
+      // cors={{
+      //   origin: 'http://localhost:8080',
+      //   methods: ['GET', 'POST'],
+      //   credentials: true
+      // }}
+    >
       <Route path="/" method="GET">
         {async () => {
           return <Response json={{ message: "Welcome to ReactServe!" }} />;
