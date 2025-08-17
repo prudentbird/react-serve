@@ -9,38 +9,214 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as QuickStartRouteImport } from './routes/quick-start'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DocsRoutegroupRouteImport } from './routes/docs/routegroup'
+import { Route as DocsQuickStartRouteImport } from './routes/docs/quick-start'
+import { Route as DocsMiddlewareRouteImport } from './routes/docs/middleware'
+import { Route as DocsKeyConceptsRouteImport } from './routes/docs/key-concepts'
+import { Route as DocsAtAGlanceRouteImport } from './routes/docs/at-a-glance'
+import { Route as DocsAppRouteImport } from './routes/docs/app'
+import { Route as DocsUsesetcontextIndexRouteImport } from './routes/docs/usesetcontext.index'
+import { Route as DocsUserouteIndexRouteImport } from './routes/docs/useroute.index'
+import { Route as DocsUsecontextIndexRouteImport } from './routes/docs/usecontext.index'
+import { Route as DocsResponseIndexRouteImport } from './routes/docs/response.index'
+import { Route as DocsRouteIndexRouteImport } from './routes/docs/route.index'
 
+const QuickStartRoute = QuickStartRouteImport.update({
+  id: '/quick-start',
+  path: '/quick-start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsRoutegroupRoute = DocsRoutegroupRouteImport.update({
+  id: '/routegroup',
+  path: '/routegroup',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsQuickStartRoute = DocsQuickStartRouteImport.update({
+  id: '/quick-start',
+  path: '/quick-start',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsMiddlewareRoute = DocsMiddlewareRouteImport.update({
+  id: '/middleware',
+  path: '/middleware',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsKeyConceptsRoute = DocsKeyConceptsRouteImport.update({
+  id: '/key-concepts',
+  path: '/key-concepts',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsAtAGlanceRoute = DocsAtAGlanceRouteImport.update({
+  id: '/at-a-glance',
+  path: '/at-a-glance',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsAppRoute = DocsAppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsUsesetcontextIndexRoute = DocsUsesetcontextIndexRouteImport.update({
+  id: '/usesetcontext/',
+  path: '/usesetcontext/',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsUserouteIndexRoute = DocsUserouteIndexRouteImport.update({
+  id: '/useroute/',
+  path: '/useroute/',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsUsecontextIndexRoute = DocsUsecontextIndexRouteImport.update({
+  id: '/usecontext/',
+  path: '/usecontext/',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsResponseIndexRoute = DocsResponseIndexRouteImport.update({
+  id: '/response/',
+  path: '/response/',
+  getParentRoute: () => DocsRoute,
+} as any)
+const DocsRouteIndexRoute = DocsRouteIndexRouteImport.update({
+  id: '/route/',
+  path: '/route/',
+  getParentRoute: () => DocsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/docs': typeof DocsRouteWithChildren
+  '/quick-start': typeof QuickStartRoute
+  '/docs/app': typeof DocsAppRoute
+  '/docs/at-a-glance': typeof DocsAtAGlanceRoute
+  '/docs/key-concepts': typeof DocsKeyConceptsRoute
+  '/docs/middleware': typeof DocsMiddlewareRoute
+  '/docs/quick-start': typeof DocsQuickStartRoute
+  '/docs/routegroup': typeof DocsRoutegroupRoute
+  '/docs/route': typeof DocsRouteIndexRoute
+  '/docs/response': typeof DocsResponseIndexRoute
+  '/docs/usecontext': typeof DocsUsecontextIndexRoute
+  '/docs/useroute': typeof DocsUserouteIndexRoute
+  '/docs/usesetcontext': typeof DocsUsesetcontextIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/docs': typeof DocsRouteWithChildren
+  '/quick-start': typeof QuickStartRoute
+  '/docs/app': typeof DocsAppRoute
+  '/docs/at-a-glance': typeof DocsAtAGlanceRoute
+  '/docs/key-concepts': typeof DocsKeyConceptsRoute
+  '/docs/middleware': typeof DocsMiddlewareRoute
+  '/docs/quick-start': typeof DocsQuickStartRoute
+  '/docs/routegroup': typeof DocsRoutegroupRoute
+  '/docs/route': typeof DocsRouteIndexRoute
+  '/docs/response': typeof DocsResponseIndexRoute
+  '/docs/usecontext': typeof DocsUsecontextIndexRoute
+  '/docs/useroute': typeof DocsUserouteIndexRoute
+  '/docs/usesetcontext': typeof DocsUsesetcontextIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/docs': typeof DocsRouteWithChildren
+  '/quick-start': typeof QuickStartRoute
+  '/docs/app': typeof DocsAppRoute
+  '/docs/at-a-glance': typeof DocsAtAGlanceRoute
+  '/docs/key-concepts': typeof DocsKeyConceptsRoute
+  '/docs/middleware': typeof DocsMiddlewareRoute
+  '/docs/quick-start': typeof DocsQuickStartRoute
+  '/docs/routegroup': typeof DocsRoutegroupRoute
+  '/docs/route/': typeof DocsRouteIndexRoute
+  '/docs/response/': typeof DocsResponseIndexRoute
+  '/docs/usecontext/': typeof DocsUsecontextIndexRoute
+  '/docs/useroute/': typeof DocsUserouteIndexRoute
+  '/docs/usesetcontext/': typeof DocsUsesetcontextIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/docs'
+    | '/quick-start'
+    | '/docs/app'
+    | '/docs/at-a-glance'
+    | '/docs/key-concepts'
+    | '/docs/middleware'
+    | '/docs/quick-start'
+    | '/docs/routegroup'
+    | '/docs/route'
+    | '/docs/response'
+    | '/docs/usecontext'
+    | '/docs/useroute'
+    | '/docs/usesetcontext'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/docs'
+    | '/quick-start'
+    | '/docs/app'
+    | '/docs/at-a-glance'
+    | '/docs/key-concepts'
+    | '/docs/middleware'
+    | '/docs/quick-start'
+    | '/docs/routegroup'
+    | '/docs/route'
+    | '/docs/response'
+    | '/docs/usecontext'
+    | '/docs/useroute'
+    | '/docs/usesetcontext'
+  id:
+    | '__root__'
+    | '/'
+    | '/docs'
+    | '/quick-start'
+    | '/docs/app'
+    | '/docs/at-a-glance'
+    | '/docs/key-concepts'
+    | '/docs/middleware'
+    | '/docs/quick-start'
+    | '/docs/routegroup'
+    | '/docs/route/'
+    | '/docs/response/'
+    | '/docs/usecontext/'
+    | '/docs/useroute/'
+    | '/docs/usesetcontext/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DocsRoute: typeof DocsRouteWithChildren
+  QuickStartRoute: typeof QuickStartRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/quick-start': {
+      id: '/quick-start'
+      path: '/quick-start'
+      fullPath: '/quick-start'
+      preLoaderRoute: typeof QuickStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +224,120 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/routegroup': {
+      id: '/docs/routegroup'
+      path: '/routegroup'
+      fullPath: '/docs/routegroup'
+      preLoaderRoute: typeof DocsRoutegroupRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/quick-start': {
+      id: '/docs/quick-start'
+      path: '/quick-start'
+      fullPath: '/docs/quick-start'
+      preLoaderRoute: typeof DocsQuickStartRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/middleware': {
+      id: '/docs/middleware'
+      path: '/middleware'
+      fullPath: '/docs/middleware'
+      preLoaderRoute: typeof DocsMiddlewareRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/key-concepts': {
+      id: '/docs/key-concepts'
+      path: '/key-concepts'
+      fullPath: '/docs/key-concepts'
+      preLoaderRoute: typeof DocsKeyConceptsRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/at-a-glance': {
+      id: '/docs/at-a-glance'
+      path: '/at-a-glance'
+      fullPath: '/docs/at-a-glance'
+      preLoaderRoute: typeof DocsAtAGlanceRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/app': {
+      id: '/docs/app'
+      path: '/app'
+      fullPath: '/docs/app'
+      preLoaderRoute: typeof DocsAppRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/usesetcontext/': {
+      id: '/docs/usesetcontext/'
+      path: '/usesetcontext'
+      fullPath: '/docs/usesetcontext'
+      preLoaderRoute: typeof DocsUsesetcontextIndexRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/useroute/': {
+      id: '/docs/useroute/'
+      path: '/useroute'
+      fullPath: '/docs/useroute'
+      preLoaderRoute: typeof DocsUserouteIndexRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/usecontext/': {
+      id: '/docs/usecontext/'
+      path: '/usecontext'
+      fullPath: '/docs/usecontext'
+      preLoaderRoute: typeof DocsUsecontextIndexRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/response/': {
+      id: '/docs/response/'
+      path: '/response'
+      fullPath: '/docs/response'
+      preLoaderRoute: typeof DocsResponseIndexRouteImport
+      parentRoute: typeof DocsRoute
+    }
+    '/docs/route/': {
+      id: '/docs/route/'
+      path: '/route'
+      fullPath: '/docs/route'
+      preLoaderRoute: typeof DocsRouteIndexRouteImport
+      parentRoute: typeof DocsRoute
+    }
   }
 }
 
+interface DocsRouteChildren {
+  DocsAppRoute: typeof DocsAppRoute
+  DocsAtAGlanceRoute: typeof DocsAtAGlanceRoute
+  DocsKeyConceptsRoute: typeof DocsKeyConceptsRoute
+  DocsMiddlewareRoute: typeof DocsMiddlewareRoute
+  DocsQuickStartRoute: typeof DocsQuickStartRoute
+  DocsRoutegroupRoute: typeof DocsRoutegroupRoute
+  DocsRouteIndexRoute: typeof DocsRouteIndexRoute
+  DocsResponseIndexRoute: typeof DocsResponseIndexRoute
+  DocsUsecontextIndexRoute: typeof DocsUsecontextIndexRoute
+  DocsUserouteIndexRoute: typeof DocsUserouteIndexRoute
+  DocsUsesetcontextIndexRoute: typeof DocsUsesetcontextIndexRoute
+}
+
+const DocsRouteChildren: DocsRouteChildren = {
+  DocsAppRoute: DocsAppRoute,
+  DocsAtAGlanceRoute: DocsAtAGlanceRoute,
+  DocsKeyConceptsRoute: DocsKeyConceptsRoute,
+  DocsMiddlewareRoute: DocsMiddlewareRoute,
+  DocsQuickStartRoute: DocsQuickStartRoute,
+  DocsRoutegroupRoute: DocsRoutegroupRoute,
+  DocsRouteIndexRoute: DocsRouteIndexRoute,
+  DocsResponseIndexRoute: DocsResponseIndexRoute,
+  DocsUsecontextIndexRoute: DocsUsecontextIndexRoute,
+  DocsUserouteIndexRoute: DocsUserouteIndexRoute,
+  DocsUsesetcontextIndexRoute: DocsUsesetcontextIndexRoute,
+}
+
+const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DocsRoute: DocsRouteWithChildren,
+  QuickStartRoute: QuickStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
