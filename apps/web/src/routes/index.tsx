@@ -171,7 +171,7 @@ please, for the love of God, do not continue this project
           ))}
         </div>
       </div>
-      <div className="flex items-center px-32 mt-40 gap-x-20">
+      <div className="flex items-center px-32 mt-40 gap-x-40">
         <div className="">
           <h2 className="text-5xl font-light">
             The missing backend <br /> framework for React.
@@ -308,6 +308,7 @@ please, for the love of God, do not continue this project
           </div>
         </div>
       </div>
+      <div className=""></div>
     </div>
   );
 }
