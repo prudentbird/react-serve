@@ -31,28 +31,27 @@ function CodeBlock({ code }: { code: string }) {
 
 
 function RouteComponent() {
-  const code = `import { serve, useRoute, Response } from "react-serve-js";
+    const code = `import { App, Route, RouteGroup, Middleware, useRoute, useContext, Response } from "react-serve-js";
 
-function App() {
-  return (
-    <Root port={6969}>
-      <Route path="/" method="GET">
-        {() => <Response json={{ message: "Hello ReactServe" }} />}
-      </Route>
-      <RouteGroup prefix="/api">
-        <Route path="/user/:id" method="GET">
-          {() => {
-            const { params } = useRoute();
-            return <Response json={{ userId: params.id }} />;
-          }}
-        </Route>
-      </RouteGroup>
-    </Root>
-  );
-}
+<App port={6969}>
+  <Route path="/" method="GET">
+    {async () => {
+      return <Response json={{ message: "Hello ReactServe" }} />;
+    }}
+  </Route>
 
-serve(<App />);
-`;
+  <RouteGroup prefix="/api">
+    <Middleware use={authMiddleware} />
+    
+    <Route path="/users/:id" method="GET">
+      {async () => {
+        const { params } = useRoute();
+        const user = useContext("user");
+        return <Response json={{ userId: params.id, currentUser: user }} />;
+      }}
+    </Route>
+  </RouteGroup>
+</App>`;
 
   return (
     <div className="space-y-8">
