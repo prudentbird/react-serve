@@ -29,7 +29,7 @@ import { App, Route, Response, useRoute, serve } from "react-serve-js";
 
 function Backend() {
   return (
-    <App port={3000}>
+    <App port={6969}>
       <Route path="/" method="GET">
         {async () => {
           return <Response json={{ message: "Hello World!" }} />;
