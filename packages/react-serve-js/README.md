@@ -39,7 +39,10 @@ const authMiddleware: MiddlewareFunction = (req, next) => {
 
 function Backend() {
   return (
-    <App port={3000}>
+    <App 
+      port={6969}
+      cors={true} // Enable CORS for all routes
+    >
       <Route path="/" method="GET">
         {async () => {
           return <Response json={{ message: "Hello World!" }} />;
@@ -73,6 +76,7 @@ The root component that configures your server.
 **Props:**
 
 - `port?: number` - Port to run the server on (default: 9000)
+- `cors?: boolean | CorsOptions` - Enable CORS middleware. Pass `true` to enable with default options, or pass a CORS options object for custom configuration.
 
 ### `<Route>`
 
@@ -90,7 +94,7 @@ Executes middleware functions for request processing, authentication, logging, e
 
 **Props:**
 
-- `use: MiddlewareFunction` - The middleware function to execute
+- `use: MiddlewareFunction | MiddlewareFunction[]` - The middleware function or array of middleware functions to execute
 
 **Example:**
 
@@ -110,13 +114,19 @@ const authMiddleware: MiddlewareFunction = (req, next) => {
 };
 
 <RouteGroup prefix="/api">
+  {/* Single middleware */}
   <Middleware use={authMiddleware} />
-  <Route path="/users" method="GET">
-    {() => {
-      const user = useContext("user");
-      return <Response json={user} />;
-    }}
-  </Route>
+  
+  {/* Or multiple middleware as an array */}
+  <RouteGroup prefix="/v2">
+    <Middleware use={[loggingMiddleware, rateLimitMiddleware, authMiddleware]} />
+    <Route path="/users" method="GET">
+      {() => {
+        const user = useContext("user");
+        return <Response json={user} />;
+      }}
+    </Route>
+  </RouteGroup>
 </RouteGroup>;
 ```
 
