@@ -35,7 +35,7 @@ function RouteComponent() {
 
 function App() {
   return (
-    <Root port={3000}>
+    <Root port={6969}>
       <Route path="/" method="GET">
         {() => <Response json={{ message: "Hello ReactServe" }} />}
       </Route>
