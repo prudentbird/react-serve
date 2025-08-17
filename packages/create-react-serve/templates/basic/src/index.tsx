@@ -26,7 +26,10 @@ const loggingMiddleware: MiddlewareFunction = (req, next) => {
 
 function Backend() {
   return (
-    <App port={6969}>
+    <App 
+      port={6969}
+      cors={true} // Enable CORS for all routes with default options
+    >
       <Route path="/" method="GET">
         {async () => {
           return <Response json={{ message: "Welcome to ReactServe!" }} />;
