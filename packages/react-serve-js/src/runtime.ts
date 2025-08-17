@@ -1,6 +1,7 @@
 import express, { Request, Response as ExpressResponse } from "express";
 import { ReactNode } from "react";
 import { watch } from "fs";
+import cors from "cors";
 
 // Context to hold req/res for useRoute() and middleware context
 let routeContext: {
@@ -39,7 +40,7 @@ const routes: {
   handler: Function;
   middlewares: Middleware[];
 }[] = [];
-let appConfig: { port?: number } = {};
+let appConfig: { port?: number; cors?: boolean | cors.CorsOptions } = {};
 
 // Component processor
 function processElement(
@@ -72,6 +73,7 @@ function processElement(
         const props = element.props || {};
         appConfig = {
           port: props.port || 9000,
+          cors: props.cors,
         };
       }
 
@@ -101,11 +103,12 @@ function processElement(
                 (child.type && child.type.name === "Middleware"))
             ) {
               const middlewareProps = child.props || {};
-              if (
-                middlewareProps.use &&
-                typeof middlewareProps.use === "function"
-              ) {
-                groupMiddlewares.push(middlewareProps.use);
+              if (middlewareProps.use) {
+                if (Array.isArray(middlewareProps.use)) {
+                  groupMiddlewares.push(...middlewareProps.use);
+                } else if (typeof middlewareProps.use === "function") {
+                  groupMiddlewares.push(middlewareProps.use);
+                }
               }
             }
           });
@@ -184,6 +187,11 @@ export function serve(element: ReactNode) {
   // Express
   const app = express();
   app.use(express.json());
+  
+  // Apply CORS if enabled in App props
+  if (appConfig.cors) {
+    app.use(cors(appConfig.cors === true ? {} : appConfig.cors));
+  }
 
   for (const route of routes) {
     const method = route.method.toLowerCase();
@@ -239,22 +247,80 @@ export function serve(element: ReactNode) {
               output.type &&
               (output.type.name === "Response" || output.type === "Response")
             ) {
-              const { status = 200, json } = output.props || {};
+              const { 
+                status = 200, 
+                json, 
+                text, 
+                html, 
+                headers = {}, 
+                redirect 
+              } = output.props || {};
+              
+              // Set status code
               res.status(status);
+              
+              // Set custom headers if provided
+              if (headers && typeof headers === 'object') {
+                Object.entries(headers).forEach(([key, value]) => {
+                  res.setHeader(key, value as string);
+                });
+              }
+              
+              // Handle redirect if provided
+              if (redirect && typeof redirect === 'string') {
+                return res.redirect(status, redirect);
+              }
+              
+              // Handle response body based on what was provided
               if (json !== undefined) {
-                res.json(json);
+                return res.json(json);
+              } else if (text !== undefined) {
+                res.setHeader('Content-Type', 'text/plain');
+                return res.send(text);
+              } else if (html !== undefined) {
+                res.setHeader('Content-Type', 'text/html');
+                return res.send(html);
               } else {
-                res.end();
+                return res.end();
               }
             }
             // Check if it's our custom Response object format
             else if (output.type === "Response") {
-              const { status = 200, json } = output.props || {};
+              const { 
+                status = 200, 
+                json, 
+                text, 
+                html, 
+                headers = {}, 
+                redirect 
+              } = output.props || {};
+              
+              // Set status code
               res.status(status);
+              
+              // Set custom headers if provided
+              if (headers && typeof headers === 'object') {
+                Object.entries(headers).forEach(([key, value]) => {
+                  res.setHeader(key, value as string);
+                });
+              }
+              
+              // Handle redirect if provided
+              if (redirect && typeof redirect === 'string') {
+                return res.redirect(status, redirect);
+              }
+              
+              // Handle response body based on what was provided
               if (json !== undefined) {
-                res.json(json);
+                return res.json(json);
+              } else if (text !== undefined) {
+                res.setHeader('Content-Type', 'text/plain');
+                return res.send(text);
+              } else if (html !== undefined) {
+                res.setHeader('Content-Type', 'text/html');
+                return res.send(html);
               } else {
-                res.end();
+                return res.end();
               }
             } else {
               // If no response was sent, send a default response
