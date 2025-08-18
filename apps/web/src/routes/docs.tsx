@@ -128,12 +128,9 @@ function RouteComponent() {
                         isActive ? 'text-white bg-white/10' : 'text-zinc-300 hover:text-white'
                       }`}
                       onClick={() => {
-                     
                         router.navigate({ 
                           to: link.path, 
-                          replace: false,
-                    
-                          search: { _t: Date.now().toString() }
+                          replace: false
                         });
                       }}
                     >
@@ -162,8 +159,7 @@ function RouteComponent() {
                 
                 router.navigate({ 
                   to: prev.path, 
-                  replace: false,
-                  search: { _t: Date.now().toString() }
+                  replace: false
                 });
                 e.preventDefault();
               }}
@@ -181,8 +177,7 @@ function RouteComponent() {
                 console.log('Navigating to next:', next.path);
                 router.navigate({ 
                   to: next.path, 
-                  replace: false,
-                  search: { _t: Date.now().toString() }
+                  replace: false
                 });
                 e.preventDefault();
               }}
