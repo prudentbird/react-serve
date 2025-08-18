@@ -19,6 +19,7 @@ import { Route as DocsResponseRouteImport } from './routes/docs/response'
 import { Route as DocsQuickStartRouteImport } from './routes/docs/quick-start'
 import { Route as DocsMiddlewareRouteImport } from './routes/docs/middleware'
 import { Route as DocsKeyConceptsRouteImport } from './routes/docs/key-concepts'
+import { Route as DocsFullWalkthroughRouteImport } from './routes/docs/full-walkthrough'
 import { Route as DocsAtAGlanceRouteImport } from './routes/docs/at-a-glance'
 import { Route as DocsAppRouteImport } from './routes/docs/app'
 import { Route as DocsRouteIndexRouteImport } from './routes/docs/route.index'
@@ -73,6 +74,11 @@ const DocsKeyConceptsRoute = DocsKeyConceptsRouteImport.update({
   path: '/key-concepts',
   getParentRoute: () => DocsRoute,
 } as any)
+const DocsFullWalkthroughRoute = DocsFullWalkthroughRouteImport.update({
+  id: '/full-walkthrough',
+  path: '/full-walkthrough',
+  getParentRoute: () => DocsRoute,
+} as any)
 const DocsAtAGlanceRoute = DocsAtAGlanceRouteImport.update({
   id: '/at-a-glance',
   path: '/at-a-glance',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRouteWithChildren
   '/docs/app': typeof DocsAppRoute
   '/docs/at-a-glance': typeof DocsAtAGlanceRoute
+  '/docs/full-walkthrough': typeof DocsFullWalkthroughRoute
   '/docs/key-concepts': typeof DocsKeyConceptsRoute
   '/docs/middleware': typeof DocsMiddlewareRoute
   '/docs/quick-start': typeof DocsQuickStartRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRouteWithChildren
   '/docs/app': typeof DocsAppRoute
   '/docs/at-a-glance': typeof DocsAtAGlanceRoute
+  '/docs/full-walkthrough': typeof DocsFullWalkthroughRoute
   '/docs/key-concepts': typeof DocsKeyConceptsRoute
   '/docs/middleware': typeof DocsMiddlewareRoute
   '/docs/quick-start': typeof DocsQuickStartRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/docs': typeof DocsRouteWithChildren
   '/docs/app': typeof DocsAppRoute
   '/docs/at-a-glance': typeof DocsAtAGlanceRoute
+  '/docs/full-walkthrough': typeof DocsFullWalkthroughRoute
   '/docs/key-concepts': typeof DocsKeyConceptsRoute
   '/docs/middleware': typeof DocsMiddlewareRoute
   '/docs/quick-start': typeof DocsQuickStartRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/docs/app'
     | '/docs/at-a-glance'
+    | '/docs/full-walkthrough'
     | '/docs/key-concepts'
     | '/docs/middleware'
     | '/docs/quick-start'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/docs/app'
     | '/docs/at-a-glance'
+    | '/docs/full-walkthrough'
     | '/docs/key-concepts'
     | '/docs/middleware'
     | '/docs/quick-start'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/docs/app'
     | '/docs/at-a-glance'
+    | '/docs/full-walkthrough'
     | '/docs/key-concepts'
     | '/docs/middleware'
     | '/docs/quick-start'
@@ -260,6 +272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsKeyConceptsRouteImport
       parentRoute: typeof DocsRoute
     }
+    '/docs/full-walkthrough': {
+      id: '/docs/full-walkthrough'
+      path: '/full-walkthrough'
+      fullPath: '/docs/full-walkthrough'
+      preLoaderRoute: typeof DocsFullWalkthroughRouteImport
+      parentRoute: typeof DocsRoute
+    }
     '/docs/at-a-glance': {
       id: '/docs/at-a-glance'
       path: '/at-a-glance'
@@ -287,6 +306,7 @@ declare module '@tanstack/react-router' {
 interface DocsRouteChildren {
   DocsAppRoute: typeof DocsAppRoute
   DocsAtAGlanceRoute: typeof DocsAtAGlanceRoute
+  DocsFullWalkthroughRoute: typeof DocsFullWalkthroughRoute
   DocsKeyConceptsRoute: typeof DocsKeyConceptsRoute
   DocsMiddlewareRoute: typeof DocsMiddlewareRoute
   DocsQuickStartRoute: typeof DocsQuickStartRoute
@@ -301,6 +321,7 @@ interface DocsRouteChildren {
 const DocsRouteChildren: DocsRouteChildren = {
   DocsAppRoute: DocsAppRoute,
   DocsAtAGlanceRoute: DocsAtAGlanceRoute,
+  DocsFullWalkthroughRoute: DocsFullWalkthroughRoute,
   DocsKeyConceptsRoute: DocsKeyConceptsRoute,
   DocsMiddlewareRoute: DocsMiddlewareRoute,
   DocsQuickStartRoute: DocsQuickStartRoute,
