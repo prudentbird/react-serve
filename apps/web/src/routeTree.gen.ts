@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as QuickStartRouteImport } from './routes/quick-start'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DocsUsesetcontextRouteImport } from './routes/docs/usesetcontext'
@@ -24,11 +23,6 @@ import { Route as DocsAtAGlanceRouteImport } from './routes/docs/at-a-glance'
 import { Route as DocsAppRouteImport } from './routes/docs/app'
 import { Route as DocsRouteIndexRouteImport } from './routes/docs/route.index'
 
-const QuickStartRoute = QuickStartRouteImport.update({
-  id: '/quick-start',
-  path: '/quick-start',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
@@ -98,7 +92,6 @@ const DocsRouteIndexRoute = DocsRouteIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
-  '/quick-start': typeof QuickStartRoute
   '/docs/app': typeof DocsAppRoute
   '/docs/at-a-glance': typeof DocsAtAGlanceRoute
   '/docs/key-concepts': typeof DocsKeyConceptsRoute
@@ -114,7 +107,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
-  '/quick-start': typeof QuickStartRoute
   '/docs/app': typeof DocsAppRoute
   '/docs/at-a-glance': typeof DocsAtAGlanceRoute
   '/docs/key-concepts': typeof DocsKeyConceptsRoute
@@ -131,7 +123,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/docs': typeof DocsRouteWithChildren
-  '/quick-start': typeof QuickStartRoute
   '/docs/app': typeof DocsAppRoute
   '/docs/at-a-glance': typeof DocsAtAGlanceRoute
   '/docs/key-concepts': typeof DocsKeyConceptsRoute
@@ -149,7 +140,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/docs'
-    | '/quick-start'
     | '/docs/app'
     | '/docs/at-a-glance'
     | '/docs/key-concepts'
@@ -165,7 +155,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/docs'
-    | '/quick-start'
     | '/docs/app'
     | '/docs/at-a-glance'
     | '/docs/key-concepts'
@@ -181,7 +170,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/docs'
-    | '/quick-start'
     | '/docs/app'
     | '/docs/at-a-glance'
     | '/docs/key-concepts'
@@ -198,18 +186,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DocsRoute: typeof DocsRouteWithChildren
-  QuickStartRoute: typeof QuickStartRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/quick-start': {
-      id: '/quick-start'
-      path: '/quick-start'
-      fullPath: '/quick-start'
-      preLoaderRoute: typeof QuickStartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/docs': {
       id: '/docs'
       path: '/docs'
@@ -337,7 +317,6 @@ const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DocsRoute: DocsRouteWithChildren,
-  QuickStartRoute: QuickStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
