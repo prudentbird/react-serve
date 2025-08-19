@@ -1,4 +1,4 @@
-import express, { Request, Response as ExpressResponse } from "express";
+import express, { Request, Response as ExpressResponse, RequestHandler } from "express";
 import { ReactNode } from "react";
 import { watch } from "fs";
 import cors from "cors";
@@ -193,158 +193,92 @@ export function serve(element: ReactNode) {
     app.use(cors(appConfig.cors === true ? {} : appConfig.cors));
   }
 
+  // Unified output handler to reduce duplication across methods
+  const sendResponseFromOutput = (
+    res: ExpressResponse,
+    output: any
+  ): void => {
+    if (!output) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "No response generated" });
+      }
+      return;
+    }
+
+    if (typeof output === "object") {
+      const isResponseElement = Boolean(
+        output.type && (output.type === "Response" || output.type?.name === "Response")
+      );
+
+      if (isResponseElement) {
+        const { status = 200, json } = output.props || {};
+        res.status(status);
+        if (json !== undefined) {
+          res.json(json);
+        } else {
+          res.end();
+        }
+        return;
+      }
+
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Invalid response format" });
+      }
+      return;
+    }
+
+    // Primitive outputs are sent as text
+    res.send(String(output));
+  };
+
+  // Shared request handler factory used for all HTTP methods
+  const createExpressHandler = (handler: Function) => {
+    const wrapped: RequestHandler = async (
+      req: Request,
+      res: ExpressResponse
+    ) => {
+      routeContext = {
+        req,
+        res,
+        params: req.params,
+        query: req.query,
+        body: req.body,
+      };
+      console.log(routeContext);
+      try {
+        const output = await handler();
+        sendResponseFromOutput(res, output);
+      } catch (error) {
+        console.error("Route handler error:", error);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Internal server error" });
+        }
+      } finally {
+        routeContext = null;
+      }
+    };
+    return wrapped;
+  };
+
+  // Register all routes for supported HTTP methods
   for (const route of routes) {
     const method = route.method.toLowerCase();
-    if (method === "get") {
-      app.get(route.path, async (req: Request, res: ExpressResponse) => {
-        // Initialize route context with middleware context map
-        routeContext = {
-          req,
-          res,
-          params: req.params,
-          query: req.query,
-          body: req.body,
-          middlewareContext: new Map(),
-        };
+    console.log(method);
+    const registrar: Record<string, (path: string, ...handlers: RequestHandler[]) => any> = {
+      get: app.get.bind(app),
+      post: app.post.bind(app),
+      put: app.put.bind(app),
+      patch: app.patch.bind(app),
+      delete: app.delete.bind(app),
+      options: app.options.bind(app),
+      head: app.head.bind(app),
+    };
 
-        try {
-          // Execute middlewares in order
-          let middlewareResult: any = null;
-          let shouldContinue = true;
-
-          for (let i = 0; i < route.middlewares.length && shouldContinue; i++) {
-            const middleware = route.middlewares[i];
-
-            // Create next function for this middleware
-            const next = () => {
-              return { __isNext: true };
-            };
-
-            middlewareResult = await middleware(req, next);
-
-            // If middleware returns next(), continue to next middleware
-            // If middleware returns a Response, stop execution
-            if (middlewareResult && middlewareResult.__isNext) {
-              middlewareResult = null; // Clear the next result
-            } else if (middlewareResult) {
-              shouldContinue = false; // Stop processing middlewares
-            }
-          }
-
-          let output: any;
-
-          // If middleware returned a response, use that; otherwise run the route handler
-          if (middlewareResult) {
-            output = middlewareResult;
-          } else {
-            output = await route.handler();
-          }
-
-          // Handle Response component
-          if (output && typeof output === "object") {
-            // Check if it's a React element with our Response type
-            if (
-              output.type &&
-              (output.type.name === "Response" || output.type === "Response")
-            ) {
-              const { 
-                status = 200, 
-                json, 
-                text, 
-                html, 
-                headers = {}, 
-                redirect 
-              } = output.props || {};
-              
-              // Set status code
-              res.status(status);
-              
-              // Set custom headers if provided
-              if (headers && typeof headers === 'object') {
-                Object.entries(headers).forEach(([key, value]) => {
-                  res.setHeader(key, value as string);
-                });
-              }
-              
-              // Handle redirect if provided
-              if (redirect && typeof redirect === 'string') {
-                return res.redirect(status, redirect);
-              }
-              
-              // Handle response body based on what was provided
-              if (json !== undefined) {
-                return res.json(json);
-              } else if (text !== undefined) {
-                res.setHeader('Content-Type', 'text/plain');
-                return res.send(text);
-              } else if (html !== undefined) {
-                res.setHeader('Content-Type', 'text/html');
-                return res.send(html);
-              } else {
-                return res.end();
-              }
-            }
-            // Check if it's our custom Response object format
-            else if (output.type === "Response") {
-              const { 
-                status = 200, 
-                json, 
-                text, 
-                html, 
-                headers = {}, 
-                redirect 
-              } = output.props || {};
-              
-              // Set status code
-              res.status(status);
-              
-              // Set custom headers if provided
-              if (headers && typeof headers === 'object') {
-                Object.entries(headers).forEach(([key, value]) => {
-                  res.setHeader(key, value as string);
-                });
-              }
-              
-              // Handle redirect if provided
-              if (redirect && typeof redirect === 'string') {
-                return res.redirect(status, redirect);
-              }
-              
-              // Handle response body based on what was provided
-              if (json !== undefined) {
-                return res.json(json);
-              } else if (text !== undefined) {
-                res.setHeader('Content-Type', 'text/plain');
-                return res.send(text);
-              } else if (html !== undefined) {
-                res.setHeader('Content-Type', 'text/html');
-                return res.send(html);
-              } else {
-                return res.end();
-              }
-            } else {
-              // If no response was sent, send a default response
-              if (!res.headersSent) {
-                res.status(500).json({ error: "Invalid response format" });
-              }
-            }
-          } else if (output && typeof output !== "object") {
-            res.send(String(output));
-          } else {
-            // If no response was sent, send a default response
-            if (!res.headersSent) {
-              res.status(500).json({ error: "No response generated" });
-            }
-          }
-        } catch (error) {
-          console.error("Route handler error:", error);
-          if (!res.headersSent) {
-            res.status(500).json({ error: "Internal server error" });
-          }
-        } finally {
-          routeContext = null;
-        }
-      });
+    const register = registrar[method];
+    if (register) {
+      register(route.path, createExpressHandler(route.handler));
+    } else {
+      console.warn(`Unsupported HTTP method: ${route.method}`);
     }
   }
 
