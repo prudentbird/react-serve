@@ -245,7 +245,7 @@ export function serve(element: ReactNode) {
         body: req.body,
         middlewareContext: new Map<string, any>(),
       };
-      console.log(routeContext);
+     
       try {
         const output = await handler();
         sendResponseFromOutput(res, output);
@@ -264,7 +264,7 @@ export function serve(element: ReactNode) {
   // Register all routes for supported HTTP methods
   for (const route of routes) {
     const method = route.method.toLowerCase();
-    console.log(method);
+   
     const registrar: Record<string, (path: string, ...handlers: RequestHandler[]) => any> = {
       get: app.get.bind(app),
       post: app.post.bind(app),
