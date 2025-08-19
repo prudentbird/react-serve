@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-08-19
+
+### Added
+- Support for all HTTP methods (POST, PUT, PATCH, DELETE, OPTIONS, HEAD) in addition to GET
+- Unified request handler factory to reduce code duplication
+- Improved response handling with `sendResponseFromOutput` function
+- Better error handling for unsupported HTTP methods
+
+### Fixed
+- Routes with non-GET methods now work properly
+- Enhanced middleware execution flow
+
 ## [0.5.0] - 2025-08-17
 
 ### Added
