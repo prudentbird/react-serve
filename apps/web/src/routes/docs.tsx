@@ -112,7 +112,7 @@ function RouteComponent() {
   return (
     <div className="flex min-h-screen max-w-7xl mx-auto">
       <div className="w-64 border-r border-white/10 bg-black/80 p-6 pt-10 sticky top-0 h-screen">
-        <div className="font-bold text-lg mb-8">Docs</div>
+     
         <div className="space-y-6">
           {sidebarGroups.map((group) => (
             <div key={group.group}>
