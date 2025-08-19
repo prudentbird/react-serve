@@ -14,6 +14,17 @@ interface ChangelogEntry {
 
 const changelogData: ChangelogEntry[] = [
   {
+    version: "0.5.1",
+    features: {
+      added: [
+        "Support for major HTTP methods (POST, PUT, PATCH, DELETE, OPTIONS, HEAD) in addition to GET.",
+      ],
+      fixed: [
+        "Routes with non-GET methods now work properly.",
+      ]
+    }
+  },
+  {
     version: "0.5.0",
     features: {
       added: [
