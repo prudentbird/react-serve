@@ -243,6 +243,7 @@ export function serve(element: ReactNode) {
         params: req.params,
         query: req.query,
         body: req.body,
+        middlewareContext: new Map<string, any>(),
       };
       console.log(routeContext);
       try {
