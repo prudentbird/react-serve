@@ -1,4 +1,4 @@
-import { Response, useSetContext, type MiddlewareFunction } from "react-serve-js/src";
+import { Response, useSetContext, type MiddlewareFunction } from "react-serve-js";
 import { prisma, JWT_SECRET } from "../config";
 import jwt from "jsonwebtoken";
 
