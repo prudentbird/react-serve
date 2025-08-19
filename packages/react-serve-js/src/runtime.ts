@@ -13,21 +13,36 @@ let routeContext: {
   middlewareContext: Map<string, any>;
 } | null = null;
 
+// Global context that can be used from anywhere
+const globalContext = new Map<string, any>();
+
 export function useRoute() {
   if (!routeContext) throw new Error("useRoute must be used inside a Route");
   return routeContext;
 }
 
 export function useSetContext(key: string, value: any) {
-  if (!routeContext)
-    throw new Error("useSetContext must be used inside a Route or Middleware");
-  routeContext.middlewareContext.set(key, value);
+  if (routeContext) {
+    // If we're inside a route/middleware, use the route context
+    routeContext.middlewareContext.set(key, value);
+  } else {
+    // If we're outside a route/middleware, use the global context
+    globalContext.set(key, value);
+  }
 }
 
 export function useContext(key: string) {
-  if (!routeContext)
-    throw new Error("useContext must be used inside a Route or Middleware");
-  return routeContext.middlewareContext.get(key);
+  if (routeContext) {
+    // If we're inside a route/middleware, check route context first, then global
+    const routeValue = routeContext.middlewareContext.get(key);
+    if (routeValue !== undefined) {
+      return routeValue;
+    }
+    return globalContext.get(key);
+  } else {
+    // If we're outside a route/middleware, use the global context
+    return globalContext.get(key);
+  }
 }
 
 // Middleware type
@@ -232,7 +247,7 @@ export function serve(element: ReactNode) {
   };
 
   // Shared request handler factory used for all HTTP methods
-  const createExpressHandler = (handler: Function) => {
+  const createExpressHandler = (handler: Function, middlewares: Middleware[] = []) => {
     const wrapped: RequestHandler = async (
       req: Request,
       res: ExpressResponse
@@ -247,7 +262,20 @@ export function serve(element: ReactNode) {
       };
      
       try {
-        const output = await handler();
+        // Execute middlewares in sequence
+        let middlewareIndex = 0;
+        
+        const executeNextMiddleware = async (): Promise<any> => {
+          if (middlewareIndex >= middlewares.length) {
+            // All middlewares executed, run the main handler
+            return await handler();
+          }
+          
+          const currentMiddleware = middlewares[middlewareIndex++];
+          return await currentMiddleware(req, executeNextMiddleware);
+        };
+        
+        const output = await executeNextMiddleware();
         sendResponseFromOutput(res, output);
       } catch (error) {
         console.error("Route handler error:", error);
@@ -277,7 +305,7 @@ export function serve(element: ReactNode) {
 
     const register = registrar[method];
     if (register) {
-      register(route.path, createExpressHandler(route.handler));
+      register(route.path, createExpressHandler(route.handler, route.middlewares));
     } else {
       console.warn(`Unsupported HTTP method: ${route.method}`);
     }
