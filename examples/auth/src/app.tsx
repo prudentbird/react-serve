@@ -3,7 +3,6 @@ import {
   Route,
   RouteGroup,
   Middleware,
-  serve,
 } from "react-serve-js";
 
 import { PORT } from "./config";
@@ -64,8 +63,7 @@ export default function AuthBackend() {
 
       {/* Protected admin routes */}
       <RouteGroup prefix="/admin">
-        <Middleware use={loggingMiddleware} />
-        <Middleware use={authMiddleware} />
+        <Middleware use={[loggingMiddleware, authMiddleware]} />
 
         {/* Get user stats */}
         <Route path="/stats" method="GET">
