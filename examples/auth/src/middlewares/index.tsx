@@ -1,4 +1,4 @@
-import { Response, useSetContext, type MiddlewareFunction } from "react-serve-js";
+import { Response, useSetContext, useContext, type MiddlewareFunction } from "react-serve-js";
 import { prisma, JWT_SECRET } from "../config";
 import jwt from "jsonwebtoken";
 
@@ -25,6 +25,7 @@ export const authMiddleware: MiddlewareFunction = async (req, next) => {
           name: true,
           bio: true,
           avatar: true,
+          isAdmin: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -51,5 +52,20 @@ export const authMiddleware: MiddlewareFunction = async (req, next) => {
 export const loggingMiddleware: MiddlewareFunction = (req, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   useSetContext("requestTimestamp", Date.now());
+  return next();
+};
+
+// Admin middleware - requires user to be authenticated and admin
+export const adminMiddleware: MiddlewareFunction = (req, next) => {
+  const user = useContext("user");
+  
+  if (!user) {
+    return <Response status={401} json={{ error: "Authentication required" }} />;
+  }
+  
+  if (!user.isAdmin) {
+    return <Response status={403} json={{ error: "Admin access required" }} />;
+  }
+  
   return next();
 };
