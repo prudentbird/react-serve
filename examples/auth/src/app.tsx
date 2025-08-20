@@ -6,7 +6,7 @@ import {
 } from "react-serve-js";
 
 import { PORT } from "./config";
-import { authMiddleware, loggingMiddleware } from "./middlewares";
+import { authMiddleware, loggingMiddleware, adminMiddleware } from "./middlewares";
 import { SignupHandler, LoginHandler } from "./routes/auth";
 import { GetCurrentUserHandler, UpdateProfileHandler } from "./routes/profile";
 import { GetAllUsersHandler, GetUserByIdHandler } from "./routes/users";
@@ -63,7 +63,7 @@ export default function AuthBackend() {
 
       {/* Protected admin routes */}
       <RouteGroup prefix="/admin">
-        <Middleware use={[loggingMiddleware, authMiddleware]} />
+        <Middleware use={[loggingMiddleware, authMiddleware, adminMiddleware]} />
 
         {/* Get user stats */}
         <Route path="/stats" method="GET">
