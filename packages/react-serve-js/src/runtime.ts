@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import { watch } from "fs";
 import cors from "cors";
 
-// Holds per-request context (available only inside a request lifecycle)
+// Context to hold req/res for useRoute() and middleware context
 let routeContext: {
   req: Request;
   res: ExpressResponse;
@@ -13,50 +13,51 @@ let routeContext: {
   middlewareContext: Map<string, any>;
 } | null = null;
 
-// Holds global context (shared outside of request lifecycle)
+// Global context that can be used from anywhere
 const globalContext = new Map<string, any>();
 
-// Hook to access current request context inside a handler
 export function useRoute() {
   if (!routeContext) throw new Error("useRoute must be used inside a Route");
   return routeContext;
 }
 
-// Hook to set values in either request-scoped or global context
 export function useSetContext(key: string, value: any) {
   if (routeContext) {
+    // If we're inside a route/middleware, use the route context
     routeContext.middlewareContext.set(key, value);
   } else {
+    // If we're outside a route/middleware, use the global context
     globalContext.set(key, value);
   }
 }
 
-// Hook to get values from request-scoped context (if available) or global context
 export function useContext(key: string) {
   if (routeContext) {
+    // If we're inside a route/middleware, check route context first, then global
     const routeValue = routeContext.middlewareContext.get(key);
-    if (routeValue !== undefined) return routeValue;
+    if (routeValue !== undefined) {
+      return routeValue;
+    }
     return globalContext.get(key);
   } else {
+    // If we're outside a route/middleware, use the global context
     return globalContext.get(key);
   }
 }
 
-// Middleware type definition
+// Middleware type
 export type Middleware = (req: Request, next: () => any) => any;
 
-// Stores all registered routes
+// Internal store for routes, middlewares and config
 const routes: {
   method: string;
   path: string;
   handler: Function;
   middlewares: Middleware[];
 }[] = [];
-
-// App-level configuration (e.g., port, cors)
 let appConfig: { port?: number; cors?: boolean | cors.CorsOptions } = {};
 
-// Recursively processes JSX-like elements (App, RouteGroup, Route, Middleware)
+// Component processor
 function processElement(
   element: any,
   pathPrefix: string = "",
@@ -64,23 +65,26 @@ function processElement(
 ): void {
   if (!element) return;
 
-  // If array, process each child
   if (Array.isArray(element)) {
     element.forEach((el) => processElement(el, pathPrefix, middlewares));
     return;
   }
 
   if (typeof element === "object") {
-    // Handle functional components (custom wrappers)
+    // Handle React elements with function components
     if (typeof element.type === "function") {
+      // Call the function component to get its JSX result
       const result = element.type(element.props || {});
       processElement(result, pathPrefix, middlewares);
       return;
     }
 
     if (element.type) {
-      // <App /> component → set global app config
-      if (element.type === "App" || (element.type && element.type.name === "App")) {
+      if (
+        element.type === "App" ||
+        (element.type && element.type.name === "App")
+      ) {
+        // Extract app configuration
         const props = element.props || {};
         appConfig = {
           port: props.port || 9000,
@@ -88,21 +92,30 @@ function processElement(
         };
       }
 
-      // <RouteGroup /> component → groups routes with prefix + middlewares
-      if (element.type === "RouteGroup" || (element.type && element.type.name === "RouteGroup")) {
+      if (
+        element.type === "RouteGroup" ||
+        (element.type && element.type.name === "RouteGroup")
+      ) {
+        // Handle RouteGroup component
         const props = element.props || {};
-        const groupPrefix = props.prefix ? `${pathPrefix}${props.prefix}` : pathPrefix;
+        const groupPrefix = props.prefix
+          ? `${pathPrefix}${props.prefix}`
+          : pathPrefix;
 
+        // Process children to collect middlewares and routes
         if (props.children) {
-          const children = Array.isArray(props.children) ? props.children : [props.children];
+          const children = Array.isArray(props.children)
+            ? props.children
+            : [props.children];
 
-          // Collect group-level middlewares
+          // First pass: collect all middleware components in this group
           const groupMiddlewares = [...middlewares];
           children.forEach((child: any) => {
             if (
               child &&
               typeof child === "object" &&
-              (child.type === "Middleware" || (child.type && child.type.name === "Middleware"))
+              (child.type === "Middleware" ||
+                (child.type && child.type.name === "Middleware"))
             ) {
               const middlewareProps = child.props || {};
               if (middlewareProps.use) {
@@ -115,13 +128,15 @@ function processElement(
             }
           });
 
-          // Process non-middleware children recursively
+          // Second pass: process all children with the accumulated middlewares
           children.forEach((child: any) => {
+            // Skip middleware components in second pass since we already processed them
             if (
               !(
                 child &&
                 typeof child === "object" &&
-                (child.type === "Middleware" || (child.type && child.type.name === "Middleware"))
+                (child.type === "Middleware" ||
+                  (child.type && child.type.name === "Middleware"))
               )
             ) {
               processElement(child, groupPrefix, groupMiddlewares);
@@ -131,19 +146,20 @@ function processElement(
         return;
       }
 
-      // <Route /> component → defines a single route
-      if (element.type === "Route" || (element.type && element.type.name === "Route")) {
+      if (
+        element.type === "Route" ||
+        (element.type && element.type.name === "Route")
+      ) {
         const props = element.props || {};
         if (props.path && props.children) {
-          // If method is missing → skip (falls back to 404)
           if (!props.method) {
-            return;
+            throw new Error(`Route with path "${props.path}" is missing a required "method" property`);
           }
-
           const fullPath = `${pathPrefix}${props.path}`;
 
-          // Merge group + route-level middlewares
+          // Combine RouteGroup middlewares with Route-level middlewares
           let routeMiddlewares = [...middlewares];
+
           if (props.middleware) {
             if (Array.isArray(props.middleware)) {
               routeMiddlewares.push(...props.middleware);
@@ -152,7 +168,6 @@ function processElement(
             }
           }
 
-          // Register route
           routes.push({
             method: props.method.toLowerCase(),
             path: fullPath,
@@ -164,7 +179,7 @@ function processElement(
       }
     }
 
-    // Recursively process children of elements
+    // Process children for non-RouteGroup elements
     if (element.props && element.props.children) {
       if (Array.isArray(element.props.children)) {
         element.props.children.forEach((child: any) =>
@@ -177,30 +192,34 @@ function processElement(
   }
 }
 
-// Main function to start the server
 export function serve(element: ReactNode) {
-  // Reset routes & config before processing
+  // Clear routes and config before processing
   routes.length = 0;
   appConfig = {};
 
-  // Process JSX tree
+  // Process the React element tree to extract routes and config
   processElement(element);
 
   const port = appConfig.port || 6969;
-  const app = express();
 
-  // Enable JSON parsing
+  // Express
+  const app = express();
   app.use(express.json());
 
-  // Enable CORS if configured
+  // Apply CORS if enabled in App props
   if (appConfig.cors) {
     app.use(cors(appConfig.cors === true ? {} : appConfig.cors));
   }
 
-  // Helper: sends back correct response based on handler output
-  const sendResponseFromOutput = (res: ExpressResponse, output: any): void => {
+  // Unified output handler to reduce duplication across methods
+  const sendResponseFromOutput = (
+    res: ExpressResponse,
+    output: any
+  ): void => {
     if (!output) {
-      if (!res.headersSent) res.status(500).json({ error: "No response generated" });
+      if (!res.headersSent) {
+        res.status(500).json({ error: "No response generated" });
+      }
       return;
     }
 
@@ -209,7 +228,6 @@ export function serve(element: ReactNode) {
         output.type && (output.type === "Response" || output.type?.name === "Response")
       );
 
-      // <Response /> JSX element
       if (isResponseElement) {
         const { status = 200, json } = output.props || {};
         res.status(status);
@@ -221,21 +239,22 @@ export function serve(element: ReactNode) {
         return;
       }
 
-      // Invalid object returned
       if (!res.headersSent) {
         res.status(500).json({ error: "Invalid response format" });
       }
       return;
     }
 
-    // If handler returned a string/number → send as text
+    // Primitive outputs are sent as text
     res.send(String(output));
   };
 
-  // Wraps a handler + middlewares into an Express handler
+  // Shared request handler factory used for all HTTP methods
   const createExpressHandler = (handler: Function, middlewares: Middleware[] = []) => {
-    const wrapped: RequestHandler = async (req: Request, res: ExpressResponse) => {
-      // Create request-scoped context
+    const wrapped: RequestHandler = async (
+      req: Request,
+      res: ExpressResponse
+    ) => {
       routeContext = {
         req,
         res,
@@ -246,13 +265,15 @@ export function serve(element: ReactNode) {
       };
 
       try {
+        // Execute middlewares in sequence
         let middlewareIndex = 0;
 
-        // Execute middleware chain
         const executeNextMiddleware = async (): Promise<any> => {
           if (middlewareIndex >= middlewares.length) {
+            // All middlewares executed, run the main handler
             return await handler();
           }
+
           const currentMiddleware = middlewares[middlewareIndex++];
           return await currentMiddleware(req, executeNextMiddleware);
         };
@@ -261,24 +282,34 @@ export function serve(element: ReactNode) {
         sendResponseFromOutput(res, output);
       } catch (error) {
         console.error("Route handler error:", error);
-        if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Internal server error" });
+        }
       } finally {
-        // Reset context after request
         routeContext = null;
       }
     };
     return wrapped;
   };
 
-  // Split routes into normal and wildcard (*) routes
+  // Register all routes for supported HTTP methods
   const regularRoutes = routes.filter((route) => route.path !== "*");
   const wildcardRoutes = routes.filter((route) => route.path === "*");
 
-  // Register regular routes
+  // Collect allowed methods per path for 405 handling
+  const methodsByPath: { [path: string]: string[] } = {};
+  for (const route of regularRoutes) {
+    if (!methodsByPath[route.path]) {
+      methodsByPath[route.path] = [];
+    }
+    if (!methodsByPath[route.path].includes(route.method.toUpperCase())) {
+      methodsByPath[route.path].push(route.method.toUpperCase());
+    }
+  }
+
   for (const route of regularRoutes) {
     const method = route.method.toLowerCase();
 
-    // Map methods to express
     const registrar: Record<string, (path: string, ...handlers: RequestHandler[]) => any> = {
       get: app.get.bind(app),
       post: app.post.bind(app),
@@ -298,21 +329,41 @@ export function serve(element: ReactNode) {
     }
   }
 
-  // Register wildcard (*) routes if defined
+app.use((req: Request, res: ExpressResponse, next: any) => {
+  const path = req.path;
+  if (methodsByPath[path] && !methodsByPath[path].includes(req.method)) {
+    res.set('Allow', methodsByPath[path].join(', '));
+
+    console.log(
+      `\n🚫  [405 Method Not Allowed]\n` +
+      `   ✦ Path: ${path}\n` +
+      `   ✦ Tried: ${req.method}\n` +
+      `   ✦ Allowed: ${methodsByPath[path].join(', ')}\n`
+    );
+
+    res.status(405).json({
+      error: "Method Not Allowed",
+      message: `Method ${req.method} is not allowed for path ${path}`,
+      path,
+      method: req.method
+    });
+  } else {
+    next();
+  }
+});
+
   const hasCustomWildcard = wildcardRoutes.length > 0;
 
   if (hasCustomWildcard) {
     for (const route of wildcardRoutes) {
       const method = route.method.toLowerCase();
 
-      // Middleware for wildcard matching
       const methodSpecificWildcardHandler = async (
         req: Request,
         res: ExpressResponse,
         next: any
       ) => {
         if (method === "all" || req.method.toLowerCase() === method) {
-          // Create request context
           routeContext = {
             req,
             res,
@@ -359,7 +410,6 @@ export function serve(element: ReactNode) {
     });
   }
 
-  // Start server
   const server = app.listen(port, () => {
     console.log(`🚀 ReactServe running at http://localhost:${port}`);
     if (process.env.NODE_ENV !== "production") {
@@ -367,17 +417,19 @@ export function serve(element: ReactNode) {
     }
   });
 
-  // Handle server-level errors
   server.on("error", (err) => {
     console.error("Server error:", err);
   });
 
-  // Hot reload for development (watch .ts/.tsx files)
+  // Hot reload
   if (process.env.NODE_ENV !== "production") {
     const watchPaths = ["."];
     watchPaths.forEach((watchPath) => {
       watch(watchPath, { recursive: true }, (eventType, filename) => {
-        if (filename && (filename.endsWith(".ts") || filename.endsWith(".tsx"))) {
+        if (
+          filename &&
+          (filename.endsWith(".ts") || filename.endsWith(".tsx"))
+        ) {
           console.log(`🔄 File changed: ${filename} - Restarting server...`);
           server.close(() => {
             process.exit(0);
