@@ -81,6 +81,11 @@ function Backend() {
           }}
         </Route>
       </RouteGroup>
+      <Route path="*" method="ALL">
+        {async () => {
+          return <Response json={{ message: "Page Not Found" }} status={404} />;
+        }}
+      </Route>
     </App>
   );
 }
