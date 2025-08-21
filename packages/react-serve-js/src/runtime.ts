@@ -151,7 +151,10 @@ function processElement(
         (element.type && element.type.name === "Route")
       ) {
         const props = element.props || {};
-        if (props.method && props.path && props.children) {
+        if (props.path && props.children) {
+          if (!props.method) {
+            throw new Error(`Route with path "${props.path}" is missing a required "method" property`);
+          }
           const fullPath = `${pathPrefix}${props.path}`;
 
           // Combine RouteGroup middlewares with Route-level middlewares
@@ -166,7 +169,7 @@ function processElement(
           }
 
           routes.push({
-            method: props.method,
+            method: props.method.toLowerCase(),
             path: fullPath,
             handler: props.children,
             middlewares: routeMiddlewares,
@@ -202,7 +205,7 @@ export function serve(element: ReactNode) {
   // Express
   const app = express();
   app.use(express.json());
-  
+
   // Apply CORS if enabled in App props
   if (appConfig.cors) {
     app.use(cors(appConfig.cors === true ? {} : appConfig.cors));
@@ -260,21 +263,21 @@ export function serve(element: ReactNode) {
         body: req.body,
         middlewareContext: new Map<string, any>(),
       };
-     
+
       try {
         // Execute middlewares in sequence
         let middlewareIndex = 0;
-        
+
         const executeNextMiddleware = async (): Promise<any> => {
           if (middlewareIndex >= middlewares.length) {
             // All middlewares executed, run the main handler
             return await handler();
           }
-          
+
           const currentMiddleware = middlewares[middlewareIndex++];
           return await currentMiddleware(req, executeNextMiddleware);
         };
-        
+
         const output = await executeNextMiddleware();
         sendResponseFromOutput(res, output);
       } catch (error) {
@@ -290,9 +293,23 @@ export function serve(element: ReactNode) {
   };
 
   // Register all routes for supported HTTP methods
-  for (const route of routes) {
+  const regularRoutes = routes.filter((route) => route.path !== "*");
+  const wildcardRoutes = routes.filter((route) => route.path === "*");
+
+  // Collect allowed methods per path for 405 handling
+  const methodsByPath: { [path: string]: string[] } = {};
+  for (const route of regularRoutes) {
+    if (!methodsByPath[route.path]) {
+      methodsByPath[route.path] = [];
+    }
+    if (!methodsByPath[route.path].includes(route.method.toUpperCase())) {
+      methodsByPath[route.path].push(route.method.toUpperCase());
+    }
+  }
+
+  for (const route of regularRoutes) {
     const method = route.method.toLowerCase();
-   
+
     const registrar: Record<string, (path: string, ...handlers: RequestHandler[]) => any> = {
       get: app.get.bind(app),
       post: app.post.bind(app),
@@ -301,6 +318,7 @@ export function serve(element: ReactNode) {
       delete: app.delete.bind(app),
       options: app.options.bind(app),
       head: app.head.bind(app),
+      all: app.all.bind(app),
     };
 
     const register = registrar[method];
@@ -309,6 +327,87 @@ export function serve(element: ReactNode) {
     } else {
       console.warn(`Unsupported HTTP method: ${route.method}`);
     }
+  }
+
+app.use((req: Request, res: ExpressResponse, next: any) => {
+  const path = req.path;
+  if (methodsByPath[path] && !methodsByPath[path].includes(req.method)) {
+    res.set('Allow', methodsByPath[path].join(', '));
+
+    console.log(
+      `\n🚫  [405 Method Not Allowed]\n` +
+      `   ✦ Path: ${path}\n` +
+      `   ✦ Tried: ${req.method}\n` +
+      `   ✦ Allowed: ${methodsByPath[path].join(', ')}\n`
+    );
+
+    res.status(405).json({
+      error: "Method Not Allowed",
+      message: `Method ${req.method} is not allowed for path ${path}`,
+      path,
+      method: req.method
+    });
+  } else {
+    next();
+  }
+});
+
+  const hasCustomWildcard = wildcardRoutes.length > 0;
+
+  if (hasCustomWildcard) {
+    for (const route of wildcardRoutes) {
+      const method = route.method.toLowerCase();
+
+      const methodSpecificWildcardHandler = async (
+        req: Request,
+        res: ExpressResponse,
+        next: any
+      ) => {
+        if (method === "all" || req.method.toLowerCase() === method) {
+          routeContext = {
+            req,
+            res,
+            params: req.params,
+            query: req.query,
+            body: req.body,
+            middlewareContext: new Map<string, any>(),
+          };
+          try {
+            let middlewareIndex = 0;
+
+            const executeNextMiddleware = async (): Promise<any> => {
+              if (middlewareIndex >= route.middlewares.length) {
+                return await route.handler();
+              }
+              const currentMiddleware = route.middlewares[middlewareIndex++];
+              return await currentMiddleware(req, executeNextMiddleware);
+            };
+
+            const output = await executeNextMiddleware();
+            sendResponseFromOutput(res, output);
+          } catch (error) {
+            console.error("Wildcard route handler error:", error);
+            if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+          } finally {
+            routeContext = null;
+          }
+        } else {
+          next();
+        }
+      };
+
+      app.use(methodSpecificWildcardHandler);
+    }
+  } else {
+    // Default 404 handler if no wildcard route is defined
+    app.use((req: Request, res: ExpressResponse) => {
+      res.status(404).json({
+        error: "Not Found",
+        message: `Route ${req.method} ${req.originalUrl} not found`,
+        path: req.originalUrl,
+        method: req.method,
+      });
+    });
   }
 
   const server = app.listen(port, () => {
