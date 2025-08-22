@@ -76,3 +76,13 @@ export function RouteGroup({
 }): React.ReactElement {
   return { type: "RouteGroup", props: { children, prefix } } as any;
 }
+
+export function FileRoutes({
+  dir,
+  prefix,
+}: {
+  dir: string;
+  prefix?: string;
+}): React.ReactElement {
+  return { type: "FileRoutes", props: { dir, prefix } } as any;
+}
