@@ -7,64 +7,16 @@ ReactServe lets you build backend APIs using React-style JSX syntax. Define rout
 ## Installation
 
 ```bash
-npx create-react-serve my-api
+npm install react-serve-js
 ```
 
 ## Quick Start
 
-```tsx
-import {
-  App,
-  Route,
-  RouteGroup,
-  Middleware,
-  Response,
-  useRoute,
-  useSetContext,
-  useContext,
-  serve,
-  type MiddlewareFunction,
-} from "react-serve-js";
-
-// Example auth middleware
-const authMiddleware: MiddlewareFunction = (req, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) {
-    return <Response status={401} json={{ error: "Unauthorized" }} />;
-  }
-
-  useSetContext("user", { id: 1, name: "User" });
-  return next();
-};
-
-function Backend() {
-  return (
-    <App
-      port={6969}
-      cors={true} // Enable CORS for all routes
-    >
-      <Route path="/" method="GET">
-        {async () => {
-          return <Response json={{ message: "Hello World!" }} />;
-        }}
-      </Route>
-
-      <RouteGroup prefix="/api">
-        <Middleware use={authMiddleware} />
-
-        <Route path="/users/:id" method="GET">
-          {async () => {
-            const { params } = useRoute();
-            const user = useContext("user");
-            return <Response json={{ userId: params.id, currentUser: user }} />;
-          }}
-        </Route>
-      </RouteGroup>
-    </App>
-  );
-}
-
-serve(Backend());
+```bash
+npx create-react-serve my-api
+cd my-api
+npm install
+npm run dev
 ```
 
 ## Components
