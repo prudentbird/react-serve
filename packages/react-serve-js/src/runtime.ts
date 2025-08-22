@@ -2,6 +2,7 @@ import express, {
   Request,
   Response as ExpressResponse,
   RequestHandler,
+  json,
 } from "express";
 import { ReactNode } from "react";
 import { watch, readdirSync, statSync, existsSync } from "fs";
@@ -297,6 +298,189 @@ function registerFileRoutesFromDirectory(
   }
 }
 
+// --- File-based routing helpers ---
+function toExpressSegment(dirName: string): string {
+  // Route group directories are skipped in the URL path
+  if (dirName.startsWith("(") && dirName.endsWith(")")) return "";
+
+  // Catch-all segment: [...slug] -> :slug
+  const catchAllMatch = dirName.match(/^\[\.\.\.(.+)\]$/);
+  if (catchAllMatch) {
+    return `:${catchAllMatch[1]}`;
+  }
+
+  // Optional catch-all: [[...slug]] -> :slug
+  const optionalCatchAllMatch = dirName.match(/^\[\[\.\.\.(.+)\]\]$/);
+  if (optionalCatchAllMatch) {
+    return `:${optionalCatchAllMatch[1]}`;
+  }
+
+  // Dynamic segment: [id] -> :id
+  const dynamicMatch = dirName.match(/^\[(.+)\]$/);
+  if (dynamicMatch) {
+    return `:${dynamicMatch[1]}`;
+  }
+
+  return dirName;
+}
+
+function withOptionalPrefix(
+  prefix: string | undefined,
+  urlPath: string
+): string {
+  const p = prefix ? (prefix.startsWith("/") ? prefix : `/${prefix}`) : "";
+  const full = p + (urlPath === "/" ? "" : urlPath) || "/";
+  return full.replace(/\/+/g, "/");
+}
+
+function fileExistsVariations(basePathWithoutExt: string): string | null {
+  const candidates = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].map(
+    (ext) => basePathWithoutExt + ext
+  );
+  for (const file of candidates) {
+    if (existsSync(file)) return file;
+  }
+  return null;
+}
+
+function createLazyMiddlewareFromModule(moduleFile: string): Middleware {
+  let loadedMiddlewares: Middleware[] | null = null;
+  return async (req, next) => {
+    if (!loadedMiddlewares) {
+      const url = pathToFileURL(moduleFile).href;
+      const mod: any = await import(url);
+      const exported =
+        mod.default ?? mod.use ?? mod.middleware ?? mod.middlewares;
+      if (!exported) {
+        // No middleware exported, just continue
+        return next();
+      }
+      loadedMiddlewares = Array.isArray(exported) ? exported : [exported];
+    }
+
+    let index = 0;
+    const run = async (): Promise<any> => {
+      if (index >= (loadedMiddlewares as Middleware[]).length) {
+        return next();
+      }
+      const current = (loadedMiddlewares as Middleware[])[index++];
+      return current(req, run);
+    };
+    return run();
+  };
+}
+
+function createFileRouteHandler(moduleFile: string) {
+  let cachedModule: any | null = null;
+  let cachedAllowed: string[] | null = null;
+
+  const load = async () => {
+    if (!cachedModule) {
+      const url = pathToFileURL(moduleFile).href;
+      cachedModule = await import(url);
+      const keys = Object.keys(cachedModule);
+      const httpMethods = [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+        "HEAD",
+        "ALL",
+      ];
+      cachedAllowed = keys
+        .filter((k) => httpMethods.includes(k.toUpperCase()))
+        .map((k) => k.toUpperCase());
+      // Treat default export as GET if no explicit GET is provided
+      if (
+        !cachedAllowed.includes("GET") &&
+        typeof cachedModule.default === "function"
+      ) {
+        cachedAllowed.push("GET");
+      }
+    }
+  };
+
+  return async function handler() {
+    await load();
+    const { req } = useRoute();
+    const method = req.method.toUpperCase();
+
+    const fn: Function | undefined =
+      cachedModule[method] ||
+      (method === "GET" ? cachedModule.default : undefined);
+
+    if (!fn) {
+      const allow = (cachedAllowed || []).filter((m) => m !== "ALL");
+      return {
+        type: "Response",
+        props: {
+          status: 405,
+          json: {
+            error: "Method Not Allowed",
+            message: `Method ${method} is not allowed for this route`,
+            allowed: allow.length ? allow : undefined,
+          },
+        },
+      };
+    }
+
+    return await fn();
+  };
+}
+
+function registerFileRoutesFromDirectory(
+  rootDir: string,
+  prefix: string | undefined,
+  currentDir: string,
+  urlSegments: string[],
+  inheritedMiddlewares: Middleware[]
+): void {
+  // Load directory-level middleware if present
+  const middlewareFile = fileExistsVariations(
+    path.join(currentDir, "_middleware")
+  );
+  const aggregatedMiddlewares = [...inheritedMiddlewares];
+  if (middlewareFile) {
+    aggregatedMiddlewares.push(createLazyMiddlewareFromModule(middlewareFile));
+  }
+
+  const routeFile = fileExistsVariations(path.join(currentDir, "route"));
+  if (routeFile) {
+    const expressPath = ("/" + urlSegments.filter(Boolean).join("/")).replace(
+      /\/+/g,
+      "/"
+    );
+    const fullPath = withOptionalPrefix(prefix, expressPath);
+
+    routes.push({
+      method: "all",
+      path: fullPath,
+      handler: createFileRouteHandler(routeFile),
+      middlewares: aggregatedMiddlewares,
+    });
+  }
+
+  // Traverse child directories
+  const entries = readdirSync(currentDir);
+  for (const entry of entries) {
+    const entryPath = path.join(currentDir, entry);
+    if (!statSync(entryPath).isDirectory()) continue;
+    if (entry.startsWith(".")) continue;
+
+    const segment = toExpressSegment(entry);
+    const nextSegments = segment ? [...urlSegments, segment] : [...urlSegments];
+    registerFileRoutesFromDirectory(
+      rootDir,
+      prefix,
+      entryPath,
+      nextSegments,
+      aggregatedMiddlewares
+    );
+  }
+}
+
 // Component processor
 function processElement(
   element: any,
@@ -402,6 +586,33 @@ function processElement(
         return;
       }
 
+
+      if (
+        element.type === "FileRoutes" ||
+        (element.type && element.type.name === "FileRoutes")
+      ) {
+        const props = element.props || {};
+        if (!props.dir) {
+          throw new Error("FileRoutes requires a 'dir' prop");
+        }
+        const dirAbs = path.isAbsolute(props.dir)
+          ? props.dir
+          : path.join(process.cwd(), props.dir);
+        if (!existsSync(dirAbs) || !statSync(dirAbs).isDirectory()) {
+          throw new Error(
+            `FileRoutes directory not found or not a directory: ${dirAbs}`
+          );
+        }
+        const effectivePrefix = props.prefix || pathPrefix;
+        registerFileRoutesFromDirectory(
+          dirAbs,
+          effectivePrefix,
+          dirAbs,
+          [],
+          middlewares
+        );
+        return;
+      }
 
       if (
         element.type === "Route" ||
