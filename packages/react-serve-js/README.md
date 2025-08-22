@@ -39,7 +39,7 @@ const authMiddleware: MiddlewareFunction = (req, next) => {
 
 function Backend() {
   return (
-    <App 
+    <App
       port={6969}
       cors={true} // Enable CORS for all routes
     >
@@ -86,6 +86,7 @@ Defines an API endpoint.
 
 - `path: string` - URL path pattern (supports Express.js route parameters)
 - `method: string` - HTTP method (GET, POST, PUT, DELETE, etc.)
+- `middleware?: MiddlewareFunction | MiddlewareFunction[]` - Route-level middleware(s) to run before the handler
 - `children: () => Promise<ReactElement>` - Async function that handles the request
 
 ### `<Middleware>`
@@ -116,10 +117,12 @@ const authMiddleware: MiddlewareFunction = (req, next) => {
 <RouteGroup prefix="/api">
   {/* Single middleware */}
   <Middleware use={authMiddleware} />
-  
+
   {/* Or multiple middleware as an array */}
   <RouteGroup prefix="/v2">
-    <Middleware use={[loggingMiddleware, rateLimitMiddleware, authMiddleware]} />
+    <Middleware
+      use={[loggingMiddleware, rateLimitMiddleware, authMiddleware]}
+    />
     <Route path="/users" method="GET">
       {() => {
         const user = useContext("user");
@@ -165,6 +168,76 @@ Sends a response back to the client.
 
 - `json?: any` - JSON data to send
 - `status?: number` - HTTP status code (default: 200)
+
+Note: The runtime currently processes `json` and `status`.
+
+### `<FileRoutes>`
+
+Automatically registers routes based on your file system, similar to Next.js or TanStack Router.
+
+**Props:**
+
+- `dir: string` - Directory to scan for file-based routes (absolute or relative to `process.cwd()`).
+- `prefix?: string` - Optional URL prefix for all discovered routes.
+
+**Conventions:**
+
+- Place a `route.tsx` (or `route.ts/js/tsx/jsx`) file inside any directory to define a route for that directory's URL path.
+- File exports map to HTTP methods by name: export `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, `HEAD`. A `default` export is treated as `GET` if `GET` is not exported.
+- Directory names map to URL segments:
+  - `users` -> `/users`
+  - `[id]` -> `/:id` (dynamic segment)
+  - `[...slug]` -> `/:slug` (currently behaves like a single dynamic segment)
+  - `[[...slug]]` -> `/:slug` (currently behaves like a single dynamic segment)
+  - `(group)` -> skipped (route group folder for organization)
+- Directory-level `_middleware.(ts|tsx|js|jsx)` applies to that folder and all subroutes.
+
+Note: Multi-segment catch-all matching is not yet supported.
+
+**Example:**
+
+```
+src/
+  routes/
+    (marketing)/
+      route.tsx            // -> GET / (default export)
+    api/
+      _middleware.ts       // -> applies to /api/**
+      users/
+        route.ts           // -> methods exported map to /api/users
+      users/[id]/
+        route.ts           // -> /api/users/:id
+      files/[[...path]]/
+        route.ts           // -> /api/files/:path*
+```
+
+```tsx
+import { App, FileRoutes, Response } from "react-serve-js";
+
+export default function Backend() {
+  return (
+    <App port={6969}>
+      <FileRoutes dir="src/routes" prefix="/" />
+    </App>
+  );
+}
+
+// src/routes/api/users/route.ts
+export async function GET() {
+  return <Response json={{ users: [] }} />;
+}
+
+export async function POST() {
+  return <Response status={201} json={{ ok: true }} />;
+}
+
+// src/routes/api/users/[id]/route.ts
+export default async function GET() {
+  // default export acts as GET
+  const { params } = useRoute();
+  return <Response json={{ id: params.id }} />;
+}
+```
 
 ## Hooks
 
@@ -214,6 +287,6 @@ Retrieve data from the request context (available in route handlers and middlewa
 - 🎯 **Type Safe** - Full TypeScript support
 - ⚡ **Fast** - Built on Express.js
 - 🧩 **Composable** - Use React patterns for API logic
-- �️ **Middleware Support** - Authentication, logging, and custom middleware
+- 🛡️ **Middleware Support** - Authentication, logging, and custom middleware
 - 🗂️ **Route Grouping** - Organize routes with shared prefixes
-- �📦 **Zero Config** - Works out of the box
+- 📦 **Zero Config** - Works out of the box
