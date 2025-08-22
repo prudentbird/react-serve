@@ -10,7 +10,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "types": [
       "node"
     ]

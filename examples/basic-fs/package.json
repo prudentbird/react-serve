@@ -4,10 +4,9 @@
   "description": "File-system routing example for ReactServe",
   "main": "dist/backend.js",
   "scripts": {
-    "dev": "react-serve dev",
-    "typecheck": "tsc --noEmit",
-    "build": "react-serve build",
-    "start": "react-serve start"
+    "dev": "tsx --watch backend.tsx",
+    "start": "tsx backend.tsx",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "react-serve",
@@ -17,7 +16,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "react-serve-js": "file:../../packages/react-serve-js",
+    "react-serve-js": "^0.6.0",
     "react": "^19.1.1"
   },
   "devDependencies": {

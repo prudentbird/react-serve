@@ -42,36 +42,31 @@ bash test-endpoints.sh
 
 ```
 examples/basic-fs/
-  README.md
-  package.json
-  test-endpoints.sh
-  tsconfig.json
+  backend.tsx - Bootstraps the app
   src/
-    index.tsx                 # Entry: exports <App port cors globalPrefix="/api" />
-    middleware.ts             # Global middleware applied to all routes
-    app/                      # File-based routes live here
-      route.tsx               # "/api" root GET/POST
+    app.tsx - Uses <FileRoutes dir> under /api prefix
+    routes/
+      route.tsx - "/api" root GET/POST
       users/
-        route.tsx             # "/api/users" GET/POST
-        [id]/route.tsx        # "/api/users/:id" GET
+        route.tsx - "/api/users" GET/POST
+        [id]/route.tsx - "/api/users/:id" GET
       blog/
-        [...slug]/route.tsx   # "/api/blog/:slug+" catch-all GET
+        [...slug]/route.tsx - "/api/blog/:slug" catch-all GET
       docs/
-        [[...slug]]/route.tsx # optional catch-all: "/api/docs/:slug*" (base and deeper)
-      (marketing)/route.tsx   # route group not in URL
+        [[...slug]]/route.tsx - optional catch-all: "/api/docs" and deeper
+      (marketing)/route.tsx - route group not in URL
       admin/
-        middleware.ts         # dir-level middleware (auth)
-        route.tsx             # "/api/admin" GET
-        stats/route.tsx       # "/api/admin/stats" GET
+        _middleware.ts - dir-level middleware (auth)
+        route.tsx - "/api/admin" GET
+        stats/route.tsx - "/api/admin/stats" GET
 ```
 
 ## Notes
 
-- Files named `route.tsx` (or .ts/.js/.jsx) map to paths derived from folder names. You can override the base filename via `react-serve.config.ts` with `routeFileBase: "server"`.
+- Files named `route.tsx` (or .ts/.js) map to paths derived from folder names.
 - Export functions named after HTTP methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, `HEAD`. A `default` export acts as `GET`.
 - Dynamic segments: `[id]` -> `:id`
-- Catch-all segments: `[...slug]` -> `:slug+`
+- Catch-all segments: `[...slug]` -> `:slug*`
 - Optional catch-all: `[[...slug]]` -> `:slug*` (also matches base path)
 - Route groups: `(marketing)` are omitted from URL paths.
-- Directory-level middleware: `middleware.(ts|tsx|js|jsx)` exports a default middleware or array of middlewares and applies to nested routes. In this example, admin routes require `Authorization: Bearer valid-token`.
-- Global middleware: `src/middleware.(ts|tsx|js|jsx)` exports a default middleware or array applied to all routes.
+- Directory-level middleware: `_middleware.(ts|tsx|js|jsx)` exports a default middleware or array of middlewares. In this example, admin routes require `Authorization: Bearer valid-token`.
