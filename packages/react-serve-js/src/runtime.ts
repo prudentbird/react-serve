@@ -2,7 +2,6 @@ import express, {
   Request,
   Response as ExpressResponse,
   RequestHandler,
-  json,
 } from "express";
 import { ReactNode } from "react";
 import { watch, readdirSync, statSync, existsSync } from "fs";
@@ -740,7 +739,9 @@ export function serve(element: ReactNode) {
       watch(watchPath, { recursive: true }, (eventType, filename) => {
         if (
           filename &&
-          (filename.endsWith(".ts") || filename.endsWith(".tsx"))
+          (filename.endsWith(".ts") || filename.endsWith(".tsx")) &&
+          !filename.includes("node_modules") &&
+          !filename.includes(".git")
         ) {
           console.log(`🔄 File changed: ${filename} - Restarting server...`);
           server.close(() => {
