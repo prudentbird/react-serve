@@ -12,12 +12,18 @@ export function App({
   children,
   port,
   cors,
+  globalPrefix,
 }: {
-  children: any;
+  children?: any;
   port?: number;
   cors?: boolean | CorsOptions;
+  /**
+   * Optional global URL prefix applied to all routes.
+   * For example, set to "/api" to mount all routes under /api.
+   */
+  globalPrefix?: string;
 }): React.ReactElement {
-  return { type: "App", props: { children, port, cors } } as any;
+  return { type: "App", props: { children, port, cors, globalPrefix } } as any;
 }
 
 export function Route({
@@ -77,12 +83,26 @@ export function RouteGroup({
   return { type: "RouteGroup", props: { children, prefix } } as any;
 }
 
-export function FileRoutes({
-  dir,
-  prefix,
-}: {
-  dir: string;
-  prefix?: string;
-}): React.ReactElement {
-  return { type: "FileRoutes", props: { dir, prefix } } as any;
-}
+/**
+ * ReactServe configuration file schema.
+ *
+ * Place a `react-serve.config.(ts|js)` at your project root to configure the runtime.
+ */
+export type ReactServeConfig = {
+  /**
+   * The source directory to scan for file-based routes and global middleware.
+   * Default: "src". Can be a relative or absolute path.
+   */
+  sourceRoot?: string;
+  /**
+   * The entry file name (without extension) to import for the app entry.
+   * Resolved from <sourceRoot>/<entry> with extensions .tsx, .ts, .jsx, .js in order.
+   * Default: "index".
+   */
+  entry?: string;
+  /**
+   * The base filename used to detect route files in each directory.
+   * For example, set to "server" to use server.ts files. Default: "route".
+   */
+  routeFileBase?: string;
+};

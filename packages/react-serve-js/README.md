@@ -119,75 +119,50 @@ Sends a response back to the client.
 **Props:**
 
 - `json?: any` - JSON data to send
+- `text?: string` - Plain text response
+- `html?: string` - HTML response
+- `headers?: Record<string, string>` - Headers to set on the response
+- `redirect?: string` - Redirect location (uses provided `status`)
 - `status?: number` - HTTP status code (default: 200)
 
-Note: The runtime currently processes `json` and `status`.
+### File-based Routing (automatic)
 
-### `<FileRoutes>`
+ReactServe automatically discovers routes from `<sourceRoot>/app/**`. By default it scans `src/app` for files named `route.(ts|tsx|js|jsx)` and registers them based on the folder structure.
 
-Automatically registers routes based on your file system, similar to Next.js or TanStack Router.
+Filesystem to URL mapping:
 
-**Props:**
+- Static names map 1:1
+- `[id]` -> `:id`
+- `[...slug]` -> `:slug` (single segment)
+- `[[...slug]]` -> `:slug` (single segment; base path does not match)
+- `(group)` directories are ignored in the URL but traversed; their `middleware.*` applies to children
 
-- `dir: string` - Directory to scan for file-based routes (absolute or relative to `process.cwd()`).
-- `prefix?: string` - Optional URL prefix for all discovered routes.
+To change the source directory, entry, or base route filename, create `react-serve.config.ts` in your project root:
 
-**Conventions:**
+```ts
+import type { ReactServeConfig } from "react-serve-js";
 
-- Place a `route.tsx` (or `route.ts/js/tsx/jsx`) file inside any directory to define a route for that directory's URL path.
-- File exports map to HTTP methods by name: export `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`, `HEAD`. A `default` export is treated as `GET` if `GET` is not exported.
-- Directory names map to URL segments:
-  - `users` -> `/users`
-  - `[id]` -> `/:id` (dynamic segment)
-  - `[...slug]` -> `/:slug` (currently behaves like a single dynamic segment)
-  - `[[...slug]]` -> `/:slug` (currently behaves like a single dynamic segment)
-  - `(group)` -> skipped (route group folder for organization)
-- Directory-level `_middleware.(ts|tsx|js|jsx)` applies to that folder and all subroutes.
+const config: ReactServeConfig = {
+  // default is "src"
+  sourceRoot: "src",
+  // default is "index"; resolved as <sourceRoot>/<entry>.(tsx|ts|jsx|js)
+  entry: "index",
+  // default is "route"; per-directory route filename base
+  routeFileBase: "route",
+};
 
-Note: Multi-segment catch-all matching is not yet supported.
-
-**Example:**
-
+export default config;
 ```
-src/
-  routes/
-    (marketing)/
-      route.tsx            // -> GET / (default export)
-    api/
-      _middleware.ts       // -> applies to /api/**
-      users/
-        route.ts           // -> methods exported map to /api/users
-      users/[id]/
-        route.ts           // -> /api/users/:id
-      files/[[...path]]/
-        route.ts           // -> /api/files/:path*
-```
+
+Global middleware can be declared once at `src/middleware.(ts|tsx|js|jsx)` as a default export of a single middleware or an array of middlewares. Directory-level middleware is supported via `middleware.(ts|tsx|js|jsx)` in each folder under `app/**`.
+
+Use the `<App>` component as your layout and, optionally, set a `globalPrefix` to mount all routes under a base path:
 
 ```tsx
-import { App, FileRoutes, Response } from "react-serve-js";
+import { App } from "react-serve-js";
 
 export default function Backend() {
-  return (
-    <App port={6969}>
-      <FileRoutes dir="src/routes" prefix="/" />
-    </App>
-  );
-}
-
-// src/routes/api/users/route.ts
-export async function GET() {
-  return <Response json={{ users: [] }} />;
-}
-
-export async function POST() {
-  return <Response status={201} json={{ ok: true }} />;
-}
-
-// src/routes/api/users/[id]/route.ts
-export default async function GET() {
-  // default export acts as GET
-  const { params } = useRoute();
-  return <Response json={{ id: params.id }} />;
+  return <App port={6969} cors={true} globalPrefix="/api" />;
 }
 ```
 

@@ -9,6 +9,7 @@ import { watch, readdirSync, statSync, existsSync } from "fs";
 import path from "path";
 import { pathToFileURL } from "url";
 import cors from "cors";
+import { createRequire } from "module";
 
 // Context to hold req/res for useRoute() and middleware context
 let routeContext: {
@@ -62,7 +63,11 @@ const routes: {
   handler: Function;
   middlewares: Middleware[];
 }[] = [];
-let appConfig: { port?: number; cors?: boolean | cors.CorsOptions } = {};
+let appConfig: {
+  port?: number;
+  cors?: boolean | cors.CorsOptions;
+  globalPrefix?: string;
+} = {};
 
 // --- File-based routing helpers ---
 function toExpressSegment(dirName: string): string {
@@ -100,13 +105,54 @@ function withOptionalPrefix(
 }
 
 function fileExistsVariations(basePathWithoutExt: string): string | null {
-  const candidates = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"].map(
+  const candidates = [".tsx", ".ts", ".jsx", ".js"].map(
     (ext) => basePathWithoutExt + ext
   );
   for (const file of candidates) {
     if (existsSync(file)) return file;
   }
   return null;
+}
+
+type LoadedConfig = { sourceRoot: string; entry: string; routeFileBase: string };
+
+function loadReactServeConfigSync(): LoadedConfig {
+  const cwd = process.cwd();
+  const base = path.join(cwd, "react-serve.config");
+  const tryPaths = [
+    base + ".ts",
+    base + ".tsx",
+    base + ".js",
+    base + ".cjs",
+    base + ".mjs",
+  ];
+
+  for (const cfgPath of tryPaths) {
+    if (!existsSync(cfgPath)) continue;
+    try {
+      const requireFn = createRequire(__filename);
+      // Prefer require() to keep this loader synchronous; works under tsx/ts-node
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = requireFn(cfgPath);
+      const conf = (mod && (mod.default || mod)) || {};
+      return {
+        sourceRoot: conf.sourceRoot || "src",
+        entry: conf.entry || "index",
+        routeFileBase: conf.routeFileBase || "route",
+      };
+    } catch (e: unknown) {
+      // Fallback to defaults on failure to load
+      console.warn(
+        "Warning: Failed to load react-serve.config from",
+        cfgPath,
+        "- using defaults. Error:",
+        (e instanceof Error && e.message) ? e.message : e
+      );
+      return { sourceRoot: "src", entry: "index", routeFileBase: "route" };
+    }
+  }
+
+  return { sourceRoot: "src", entry: "index", routeFileBase: "route" };
 }
 
 function createLazyMiddlewareFromModule(moduleFile: string): Middleware {
@@ -201,18 +247,21 @@ function registerFileRoutesFromDirectory(
   prefix: string | undefined,
   currentDir: string,
   urlSegments: string[],
-  inheritedMiddlewares: Middleware[]
+  inheritedMiddlewares: Middleware[],
+  routeFileBase: string
 ): void {
   // Load directory-level middleware if present
   const middlewareFile = fileExistsVariations(
-    path.join(currentDir, "_middleware")
+    path.join(currentDir, "middleware")
   );
   const aggregatedMiddlewares = [...inheritedMiddlewares];
   if (middlewareFile) {
     aggregatedMiddlewares.push(createLazyMiddlewareFromModule(middlewareFile));
   }
 
-  const routeFile = fileExistsVariations(path.join(currentDir, "route"));
+  const routeFile = fileExistsVariations(
+    path.join(currentDir, routeFileBase)
+  );
   if (routeFile) {
     const expressPath = ("/" + urlSegments.filter(Boolean).join("/")).replace(
       /\/+/g,
@@ -242,7 +291,8 @@ function registerFileRoutesFromDirectory(
       prefix,
       entryPath,
       nextSegments,
-      aggregatedMiddlewares
+      aggregatedMiddlewares,
+      routeFileBase
     );
   }
 }
@@ -279,7 +329,23 @@ function processElement(
         appConfig = {
           port: props.port || 9000,
           cors: props.cors,
+          globalPrefix: props.globalPrefix,
         };
+
+        const layoutPrefix = props.globalPrefix
+          ? `${pathPrefix}${props.globalPrefix}`
+          : pathPrefix;
+        const children = props.children;
+        if (children) {
+          if (Array.isArray(children)) {
+            children.forEach((child: any) =>
+              processElement(child, layoutPrefix, middlewares)
+            );
+          } else {
+            processElement(children, layoutPrefix, middlewares);
+          }
+        }
+        return;
       }
 
       if (
@@ -336,32 +402,6 @@ function processElement(
         return;
       }
 
-      if (
-        element.type === "FileRoutes" ||
-        (element.type && element.type.name === "FileRoutes")
-      ) {
-        const props = element.props || {};
-        if (!props.dir) {
-          throw new Error("FileRoutes requires a 'dir' prop");
-        }
-        const dirAbs = path.isAbsolute(props.dir)
-          ? props.dir
-          : path.join(process.cwd(), props.dir);
-        if (!existsSync(dirAbs) || !statSync(dirAbs).isDirectory()) {
-          throw new Error(
-            `FileRoutes directory not found or not a directory: ${dirAbs}`
-          );
-        }
-        const effectivePrefix = props.prefix || pathPrefix;
-        registerFileRoutesFromDirectory(
-          dirAbs,
-          effectivePrefix,
-          dirAbs,
-          [],
-          middlewares
-        );
-        return;
-      }
 
       if (
         element.type === "Route" ||
@@ -419,6 +459,35 @@ export function serve(element: ReactNode) {
   // Process the React element tree to extract routes and config
   processElement(element);
 
+  // Auto-discover file-based routes
+  const { sourceRoot, routeFileBase } = loadReactServeConfigSync();
+  const sourceRootAbs = path.isAbsolute(sourceRoot)
+    ? sourceRoot
+    : path.join(process.cwd(), sourceRoot);
+
+  const globalMiddlewares: Middleware[] = [];
+  const globalMiddlewareFile = fileExistsVariations(
+    path.join(sourceRootAbs, "middleware")
+  );
+  if (globalMiddlewareFile) {
+    globalMiddlewares.push(
+      createLazyMiddlewareFromModule(globalMiddlewareFile)
+    );
+  }
+
+  // Determine the root directory for routes; scan only `${sourceRoot}/app`
+  const routesRoot = path.join(sourceRootAbs, "app");
+
+  // Register routes recursively starting at the selected root
+  registerFileRoutesFromDirectory(
+    routesRoot,
+    appConfig.globalPrefix,
+    routesRoot,
+    [],
+    globalMiddlewares,
+    routeFileBase || "route"
+  );
+
   const port = appConfig.port || 6969;
 
   // Express
@@ -446,13 +515,28 @@ export function serve(element: ReactNode) {
       );
 
       if (isResponseElement) {
-        const { status = 200, json } = output.props || {};
+        const { status = 200, json, text, html, headers, redirect } = output.props || {};
         res.status(status);
+        if (headers && typeof headers === "object") {
+          res.set(headers);
+        }
+        if (redirect) {
+          res.redirect(status, redirect);
+          return;
+        }
         if (json !== undefined) {
           res.json(json);
-        } else {
-          res.end();
+          return;
         }
+        if (text !== undefined) {
+          res.type("text/plain").send(String(text));
+          return;
+        }
+        if (html !== undefined) {
+          res.type("text/html").send(String(html));
+          return;
+        }
+        res.end();
         return;
       }
 
