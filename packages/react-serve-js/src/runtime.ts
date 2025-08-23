@@ -229,6 +229,7 @@ function createFileRouteHandler(moduleFile: string) {
         type: "Response",
         props: {
           status: 405,
+          headers: allow.length ? { Allow: allow.join(", ") } : undefined,
           json: {
             error: "Method Not Allowed",
             message: `Method ${method} is not allowed for this route`,
