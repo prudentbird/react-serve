@@ -2,6 +2,7 @@ import { readdir, readFile, writeFile, mkdir } from "fs/promises";
 import { join, resolve } from "path";
 import { existsSync } from "fs";
 import readline from "readline";
+import https from "https";
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -11,6 +12,41 @@ const rl = readline.createInterface({
 function ask(question: string): Promise<string> {
   return new Promise((resolve) => {
     rl.question(question, resolve);
+  });
+}
+
+async function getLatestVersion(packageName: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = `https://registry.npmjs.org/${packageName}/latest`;
+    
+    const request = https.get(url, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const packageInfo = JSON.parse(data);
+          if (packageInfo.version) {
+            resolve(packageInfo.version);
+          } else {
+            reject(new Error('Version not found in package info'));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }).on('error', (error) => {
+      reject(error);
+    });
+
+    // Set timeout for the request
+    request.setTimeout(5000, () => {
+      request.destroy();
+      reject(new Error('Request timeout'));
+    });
   });
 }
 
@@ -50,11 +86,23 @@ export async function createReactServeApp(
     // Create project directory
     await mkdir(projectPath, { recursive: true });
 
+    // Get latest version of react-serve-js
+    console.log("📦 Fetching latest version of react-serve-js...");
+    let latestVersion: string;
+    try {
+      latestVersion = await getLatestVersion("react-serve-js");
+      console.log(`✅ Latest version: ${latestVersion}\n`);
+    } catch (error) {
+      console.warn("⚠️  Could not fetch latest version, using fallback version 0.6.0");
+      console.warn(`    Error: ${error instanceof Error ? error.message : String(error)}`);
+      latestVersion = "0.6.0";
+    }
+
     // Copy template files
     await copyTemplate(template, projectPath);
 
-    // Update package.json with project name
-    await updatePackageJson(projectPath, projectName);
+    // Update package.json with project name and latest react-serve-js version
+    await updatePackageJson(projectPath, projectName, latestVersion);
 
     console.log("✅ Project created successfully!\n");
     console.log("Next steps:");
@@ -95,11 +143,16 @@ async function copyDirectory(src: string, dest: string) {
   }
 }
 
-async function updatePackageJson(projectPath: string, projectName: string) {
+async function updatePackageJson(projectPath: string, projectName: string, latestVersion: string) {
   const packageJsonPath = join(projectPath, "package.json");
   const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
 
   packageJson.name = projectName;
+  
+  // Update react-serve-js to the latest version
+  if (packageJson.dependencies && packageJson.dependencies["react-serve-js"]) {
+    packageJson.dependencies["react-serve-js"] = `^${latestVersion}`;
+  }
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 }
